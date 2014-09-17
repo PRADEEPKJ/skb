@@ -22,8 +22,6 @@ typedef long errval_t;
 #define ELEMENT_NAME_BUF_SIZE 80
 #define ECLIPSE_DIR "/usr/local/eclipse"
 
-
-
 struct skb_query_state {
     char output_buffer[BUFFER_SIZE];
     char error_buffer[BUFFER_SIZE];

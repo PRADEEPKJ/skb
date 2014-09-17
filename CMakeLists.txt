@@ -81,7 +81,7 @@ configure_file (
 
 include_directories ("${PROJECT_SOURCE_DIR}/icparc_solver")
 add_subdirectory (icparc_solver)
-#add_subdirectory (doc)
+add_subdirectory (doc)
 
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
