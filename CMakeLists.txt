@@ -1,6 +1,11 @@
 cmake_minimum_required (VERSION 2.6)
 project (Skb)
 
+execute_process(COMMAND uname -m 
+    OUTPUT_VARIABLE ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(ARCH "${ARCH}_linux")
+MESSAGE( ${ARCH})
+
 include(FindPkgConfig)
 
 pkg_check_modules(GIO2 REQUIRED gio-2.0)
@@ -15,7 +20,7 @@ string (REPLACE ";" " " GIO_CFLAGS "${GIO2_CFLAGS}")
 set (Skb_VERSION_MAJOR 1)
 set (Skb_VERSION_MINOR 0)
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g -std=c99 -I/usr/local/eclipse/include/x86_64_linux -D __USE_SVID -D GLOBAL_DEBUG -I /usr/include/gio-unix-2.0 ${GIO_CFLAGS}")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g -std=c99 -I/usr/local/eclipse/include/$ARCH -D __USE_SVID -D GLOBAL_DEBUG -I /usr/include/gio-unix-2.0 ${GIO_CFLAGS}")
 set (GDBUS_CODEGEN "gdbus-codegen")
 
 function(add_gdbus_codegen)
@@ -63,7 +68,7 @@ SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS}
 SET (CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS_INIT} $ENV{LDFLAGS}
      CACHE STRING "Flags used by the linker during the creation of modules.")
 
-SET( CMAKE_EXE_LINKER_FLAGS  "-lreadline -leclipse -L /usr/local/eclipse/lib/x86_64_linux ${GIO_LDFLAGS}" )
+SET( CMAKE_EXE_LINKER_FLAGS  "-lreadline -leclipse -L /usr/local/eclipse/lib/$ARCH ${GIO_LDFLAGS}" ) 
 
 
 # configure a header file to pass some of the CMake settings
@@ -76,7 +81,7 @@ configure_file (
 
 include_directories ("${PROJECT_SOURCE_DIR}/icparc_solver")
 add_subdirectory (icparc_solver)
-add_subdirectory (doc)
+#add_subdirectory (doc)
 
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
