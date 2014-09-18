@@ -20,7 +20,7 @@ string (REPLACE ";" " " GIO_CFLAGS "${GIO2_CFLAGS}")
 set (Skb_VERSION_MAJOR 1)
 set (Skb_VERSION_MINOR 0)
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g -std=c99 -I/usr/local/eclipse/include/$ARCH -D __USE_SVID -D GLOBAL_DEBUG -I /usr/include/gio-unix-2.0 ${GIO_CFLAGS}")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g -std=c99 -I/usr/local/eclipse/include/${ARCH} -D __USE_SVID -D GLOBAL_DEBUG -I /usr/include/gio-unix-2.0 ${GIO_CFLAGS}")
 set (GDBUS_CODEGEN "gdbus-codegen")
 
 function(add_gdbus_codegen)
@@ -68,7 +68,7 @@ SET (CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_INIT} $ENV{LDFLAGS}
 SET (CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS_INIT} $ENV{LDFLAGS}
      CACHE STRING "Flags used by the linker during the creation of modules.")
 
-SET( CMAKE_EXE_LINKER_FLAGS  "-lreadline -leclipse -L /usr/local/eclipse/lib/$ARCH ${GIO_LDFLAGS}" ) 
+SET( CMAKE_EXE_LINKER_FLAGS  "-lreadline -leclipse -L /usr/local/eclipse/lib/${ARCH} ${GIO_LDFLAGS}" ) 
 
 
 # configure a header file to pass some of the CMake settings
