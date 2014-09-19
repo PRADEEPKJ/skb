@@ -70,6 +70,7 @@ SET (CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS_INIT} $ENV{LDFLAGS}
 
 SET( CMAKE_EXE_LINKER_FLAGS  "-lreadline -leclipse -L /usr/local/eclipse/lib/${ARCH} ${GIO_LDFLAGS}" ) 
 
+SET ( ICPARC_SOLVER -L"/usr/local/eclipse/lib/${ARCH}/ic")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -79,9 +80,7 @@ configure_file (
   )
 
 
-include_directories ("${PROJECT_SOURCE_DIR}/icparc_solver")
-add_subdirectory (icparc_solver)
-add_subdirectory (doc)
+#add_subdirectory (doc)
 
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
@@ -89,7 +88,7 @@ include_directories ("${PROJECT_BINARY_DIR}")
 
 # add the executable
 add_executable (skb skb_service.c skb_functions.c skb_gdbus.c ${SKB_GENERATED_SOURCES})
-target_link_libraries (skb  ${EXTRA_LIBS} ${CMAKE_EXE_LINKER_FLAGS} icparc_solver)
+target_link_libraries (skb  ${EXTRA_LIBS} ${CMAKE_EXE_LINKER_FLAGS} ${ICPARC_SOLVER})
 
 
 # add the install targets
