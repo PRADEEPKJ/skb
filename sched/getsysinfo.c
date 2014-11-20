@@ -138,15 +138,19 @@ id_list_p all_nodes_list_p = NULL;
 
 long sum_CPUs_total = 0;
 
+GMainLoop *loop;
 
 void
 callback_from_skb_query (GObject *source_object,
                         GAsyncResult *res,
                         gpointer user_data){
 
+  fprintf(stdout,"the function called back with the results\n");
+  fflush(stdout);
+  g_main_loop_unref (loop);
+  g_main_loop_quit (loop);
 
-    fprintf(stdout,"the function called back with the results\n");
-   fflush(stdout);
+
 }
 
 
@@ -458,16 +462,16 @@ get_cpus_usage_per_node ()
 		node_id);
       int fd = open (fname, O_RDONLY, 0);
       
-	if(fd < 0)
-          //printf("memtotal is---------------->%s \n",strerror(errno));
+      if(fd < 0)
+          printf("memtotal is---------------->%s \n",strerror(errno));
 
       if ((fd >= 0) && (read (fd, buf, BIG_BUF_SIZE) > 0))
 	{
 	  CLEAR_CPU_LIST (node[node_ix].cpu_list_p);
 	  //printf("after clear=============\n");
 	  n = add_ids_to_list_from_str (node[node_ix].cpu_list_p, buf);
-	  //      n = NUM_IDS_IN_LIST(node[node_ix].cpu_list_p); 
-	 // printf ("number of cpus ==>%d\n", n);
+	  n = NUM_IDS_IN_LIST(node[node_ix].cpu_list_p); 
+	  //printf ("number of cpus ==>%d\n", n);
 	}
 
 #if 0
@@ -495,18 +499,19 @@ get_cpus_usage_per_node ()
 	  //printf("total cpus usage ==>%d\n",  node[node_ix].CPUs_total);
 	}
 #endif
-	  node[node_ix].CPUs_total = n * ONE_HUNDRED;
+      node[node_ix].CPUs_total = n * ONE_HUNDRED;
       sum_CPUs_total += node[node_ix].CPUs_total;
       //printf ("total cpus usage ==>%d\n", sum_CPUs_total);
       close (fd);
 
       int old_cpu_data_buf = 1 - cur_cpu_data_buf;
       if (cpu_data_buf[old_cpu_data_buf].time_stamp > 0) 
-     // printf("the index is ==>%d\n",new);
 	{
+      	 // printf("the index is ==>%d\n",new);
 	  uint64_t idle_ticks = 0;
 	  int cpu = 0;
 	  int num_lcpus = NUM_IDS_IN_LIST (node[node_ix].cpu_list_p);
+	  printf("Number of lcpus are ==>%d\n",num_lcpus);
 	  int num_cpus_to_process = num_lcpus;
 	  while (num_cpus_to_process)
 	    {
@@ -599,17 +604,15 @@ void add_num_nodes_info_to_skb(){
 
   for (ix = 0; ix < num_nodes; ix++)
     {
-      //fprintf(stdout, "Node %d: MBs_total %ld, MBs_free %6ld\n", ix, node[ix].MBs_total, node[ix].MBs_free);
 
 	sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
                node[ix].CPUs_free);
 	skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
-      fprintf (stdout,
+	fprintf (stdout,
                " added to skb Node %d:  num cpus %d: MBs_total %ld, MBs_free %6ld, CPUs_total %ld, CPUs_free %4ld \n ",
                ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
                node[ix].CPUs_free);
     }
-
 }
 
 
@@ -706,13 +709,15 @@ main ()
 
 
   get_cpus_idle_data ();
-  sleep (5);
+  sleep (2);
   get_cpus_idle_data ();
   get_cpus_usage_per_node ();
   get_node_mem_info ();
 
+  loop = g_main_loop_new (NULL, FALSE);
   add_num_nodes_info_to_skb();
-  while (1);
+
+  g_main_loop_run (loop);
   //show_nodes_info ();
 
 

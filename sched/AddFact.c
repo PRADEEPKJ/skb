@@ -34,8 +34,8 @@ callback_from_skb_query (GObject * source_object,
   if (retval)
   {
     printf ("finish success\n");
-    fprintf (stdout, "the function called back with the results %s\n", qres);
-    printf("the ersiyt iis --->%s\n",L);
+    fprintf (stdout, "the function called back with the results==> %s\n", qres);
+   // printf("the ersiyt iis --->%s\n",L);
     fflush (stdout);
   }
   else
@@ -45,16 +45,19 @@ callback_from_skb_query (GObject * source_object,
   g_main_loop_quit (loop);
 }
 
-void form_query (char *algo, char *fn_name, char *input){
+void form_query (char *algo, char *fn_name, int input1, int input2){
 
-  
-  sprintf(query,"[%s], %s(%s,L),write(L)",algo, fn_name, input);
+  sprintf(query,"[%s], %s(%d,%d,L),write(L)",algo, fn_name, input1,input2);
   printf("query is =========>%s\n",query);
 
 }
  
-	
+void form_plain_query (char *algo, char *fn_name){
 
+  sprintf(query,"[%s], %s(L),write(L)",algo, fn_name);
+  printf("query is =========>%s\n",query);
+
+}
 
 void
 main (int argc, char *argv[])
@@ -77,7 +80,11 @@ main (int argc, char *argv[])
     skb_call_add_fact (proxy, argv[2], NULL, on_add_fact, NULL);
   else if (!strcmp (argv[1], "-q"))
     {
-      form_query (argv[2],argv[3],argv[4]);
+	if(argc > 4)
+      		form_query (argv[2],argv[3],atoi(argv[4]),atoi(argv[5]));
+	else
+      		form_plain_query (argv[2],argv[3]);
+	
       skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
      // skb_call_query (proxy, "findall(X,descend(telephone,X),L)", NULL, callback_from_skb_query, NULL);
     }

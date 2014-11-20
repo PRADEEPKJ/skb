@@ -19,6 +19,7 @@ on_handle_add_fact(Skb * skeleton,
 	skb_complete_add_fact(skeleton, invocation, out);
 }
 
+#if 0
 static gboolean
 on_handle_query(Skb * skeleton,
 		GDBusMethodInvocation * invocation, gchar * query)
@@ -27,7 +28,10 @@ on_handle_query(Skb * skeleton,
 	char str[1024];		//XXX
 	int res;
 
+        printf("on handle query..........\n");
+
 //	g_message("SKB query: %s", query);
+	
 	res = execute_query(query, &st);
 
 	if (res == 0)
@@ -37,7 +41,35 @@ on_handle_query(Skb * skeleton,
 	else
 		sprintf(str, "Error. : %s", st.error_buffer);
 
+	printf("the reply is ==>%s\n",str);
 	skb_complete_query(skeleton, invocation, str);
+}
+#endif
+
+static gboolean
+on_handle_query(Skb * skeleton,
+		GDBusMethodInvocation * invocation, gchar * query)
+{
+	static struct skb_query_state st;
+	char str[1024];		//XXX
+
+        printf("on handle query..........\n");
+
+//	g_message("SKB query: %s", query);
+	
+        errval_t res;
+
+	res = execute_query(query, &st);
+
+	if (res == 0)
+		sprintf(str, "%s", st.output_buffer);
+	else if (res == 1)
+		sprintf(str, "%s", st.output_buffer);
+	else
+		sprintf(str, "%s", st.error_buffer);
+
+	printf("the reply is ==>%s\n",str);
+	skb_complete_query(skeleton, invocation,  str);
 }
 
 static void

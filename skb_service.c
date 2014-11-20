@@ -122,6 +122,7 @@ errval_t execute_query(char *query, struct skb_query_state * st)
 	static struct skb_query_state sst;
 	char str[256];
 	char *s;
+	printf(".........execute query........\n");
 
 	if (st == NULL)
 		st = &sst;	//XXX if we are not interested in output and/or error states 
@@ -168,7 +169,7 @@ errval_t execute_query(char *query, struct skb_query_state * st)
 		ec_resume();
 	}
 
-	printf("skb output was: %s\n", st->output_buffer);
+	printf("skb... output was: %s\n", st->output_buffer);
 	printf("skb error  was: %s\n", st->error_buffer);
 	printf("skb exec res: %d\n", st->exec_res);
 

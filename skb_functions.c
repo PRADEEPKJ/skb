@@ -120,8 +120,9 @@ errval_t skb_execute(char *goal)
 int skb_execute_query(char *fmt, ...)
 {
     static char buffer[BUFFER_SIZE];
-
+    
     va_list va_l;
+    printf("skb execute query..............\n");
     va_start(va_l, fmt);
     vsnprintf(buffer, BUFFER_SIZE, fmt, va_l);
     va_end(va_l);
