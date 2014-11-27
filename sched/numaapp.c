@@ -17,15 +17,16 @@ struct thread_info
   pthread_t thread_id;		/* ID returned by pthread_create() */
   int thread_num;		/* Application-defined thread # */
   char *argv_string;		/* From command-line argument */
-  int chunk_size;
+  size_t chunk_size;
   int node_id;
 };
 
+size_t pages_per_thread = 0;
 int running_threads = 0;
 
 pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
-int num_threads;
-int memory;
+size_t num_threads;
+size_t memory;
 
 struct thread_info *tinfo;
 char *start = NULL;
@@ -156,50 +157,97 @@ t_sig_handler (int signo)
 
 }
 
+
+void
+thread_start (void *arg)
+{
+  struct thread_info *thinfo;
+  thinfo = arg;
+  size_t bytes = thinfo->chunk_size;
+  thinfo->node_id = 0; 
+  numa_run_on_node (thinfo->node_id);
+  printf("number of bytes ==>%u\n",bytes);
+bytes = 6;
+  //void *start = (void *) numa_alloc_onnode (bytes, thinfo->node_id);
+  void *start = (void*) numa_alloc_local(bytes);
+  //void *start = (void *) malloc (bytes);
+  if (start == NULL)
+    printf ("failed to allocate the memory on node %d\n", thinfo->node_id);
+  //memset (start, 0, bytes);
+  char *start_addr =  start;
+  char *end_addr =  start_addr + bytes;
+  printf ("start address is=> %p..end address is ==>%p\n", start_addr,
+	  end_addr);
+  fflush (stdout);
+  int loop;
+  for (loop = 0; loop < 1; loop++)
+    {
+      start_addr = start;
+      while (start_addr < end_addr)
+	{
+   	  printf("start address is ==>%p\n",start_addr);
+	  *start_addr++ = 'a';
+	}
+      start_addr = start;
+      while (start_addr < end_addr)
+	{
+	  if (*start_addr++ != 'a');
+	}
+    }
+  printf ("%d---thread finished read/write test\n", thinfo->thread_num);
+  fflush (stdout);
+  numa_free (start, bytes);
+  // free(start);
+  pthread_mutex_lock (&running_mutex);
+  running_threads--;
+  pthread_mutex_unlock (&running_mutex);
+}
+
+#if 0
+
 void
 thread_start (void *arg)
 {
 
-  tinfo = arg;
+  struct thread_info *thinfo = arg;
   if (signal (SIGSEGV, t_sig_handler) == SIG_ERR)
     printf ("\ncan't catch SIGINT\n");
 
-  size_t bytes = tinfo->chunk_size;
-  tinfo->node_id = 0;
-  numa_run_on_node (tinfo->node_id);
-  //void *start = (void *) numa_alloc_onnode (bytes, tinfo->node_id);
-   void *start = (void*)numa_alloc_local(bytes);
+  size_t bytes = thinfo->chunk_size;
+  printf("the chunk size is ===>%u\n",bytes);
+  thinfo->node_id = 0;
+  numa_set_strict(0);
+  numa_run_on_node (thinfo->node_id);
+  void *start = (void *) numa_alloc_onnode (bytes, thinfo->node_id);
+  // void *start = (void*)numa_alloc_local(bytes);
   if (start == NULL)
-    printf ("failed to allocate the memory on node %d\n", tinfo->node_id);
-  else
-    //printf("allocated memory successfully\n");
-    fflush (stdout);
+    printf ("failed to allocate the memory on node %d\n", thinfo->node_id);
 
-  memset(start,0,bytes);
-  int *start_addr = (int *) start;
-  int *end_addr = (int *) start + tinfo->chunk_size;
+  //memset(start,'a',bytes);
+  char *start_addr = (char *) start;
+  char *end_addr = (char *) start + bytes;
   printf ("start address is=> %p..end address is ==>%p\n", start_addr,
 	  end_addr);
   fflush (stdout);
 
   while (start_addr < end_addr)
     {
-      *start_addr = 1;
+      *start_addr = 'a';
       start_addr++;
 
     }
-  printf ("write success ful for thread %d\n", tinfo->thread_num);
+  printf ("write success ful for thread %d\n", thinfo->thread_num);
   fflush (stdout);
 
   start_addr = start;
 
   while (start_addr < end_addr)
     {
-      if (*start_addr++ != 1)
+      if (*start_addr++ != 'a')
 	printf ("Pattern does not match\n");
     }
 
-  printf ("%d---thread finished read/write test\n", tinfo->thread_num);
+  printf ("%d---thread finished read/write test\n", thinfo->thread_num);
   fflush (stdout);
   numa_free (start);
   pthread_mutex_lock (&running_mutex);
@@ -209,6 +257,7 @@ thread_start (void *arg)
 
 }
 
+#endif
 
 
 
@@ -228,47 +277,42 @@ callback_from_skb_query (GObject * source_object,
 
   if (retval)
     {
-//    printf ("finish success\n");
       fprintf (stdout, "the function called back with the results==> %s\n",
 	       qres);
-      // printf("the ersiyt iis --->%s\n",L);
       fflush (stdout);
     }
   else
     printf ("failed\n");
-  // result=g_async_result_get_user_data ();
 
   int node_id = parse_results (qres);
-  if (numa_run_on_node (node_id) < 0)
-    printf ("Failed to run on the  node %d \n", node_id);
-  printf (" run on the  node %d \n", node_id);
+ // if (numa_run_on_node (node_id) < 0)
+   // printf ("Failed to run on the  node %d \n", node_id);
+ // printf (" run on the  node %d \n", node_id);
 
-  if (signal (SIGINT, sig_handler) == SIG_ERR)
-    printf ("\ncan't catch SIGINT\n");
-
+  //if (signal (SIGINT, sig_handler) == SIG_ERR)
+    //printf ("\ncan't catch SIGINT\n");
 
   int tnum;
 
-  if (num_threads > 1)
+  if (num_threads >= 1)
     {
-      tinfo = calloc (num_threads, sizeof (struct thread_info));
-
-      if (tinfo == NULL)
-	printf ("calloc failed\n");
-
-
-      int chunk_size = (memory * OneMB) / num_threads;
-      printf ("the chunk size is ==>%d\n", chunk_size);
+      
+      size_t bytes = pages_per_thread * 4096;
       int s = pthread_attr_init (&attr);
       if (s != 0)
 	printf ("attr init failed \n");
       for (tnum = 0; tnum < num_threads; tnum++)
 	{
-	  tinfo[tnum].thread_num = tnum + 1;
-	  tinfo[tnum].chunk_size = chunk_size;
+		tinfo = calloc (1, sizeof (struct thread_info));
+
+      		if (tinfo == NULL)
+		    printf ("calloc failed\n");
+
+	  tinfo->thread_num = tnum + 1;
+	  tinfo->chunk_size = bytes;
 	  s =
-	    pthread_create (&tinfo[tnum].thread_id, &attr,
-			    (void *) &thread_start, &tinfo[tnum]);
+	    pthread_create (&tinfo->thread_id, &attr,
+			    (void *) &thread_start, tinfo);
 
 	  pthread_mutex_lock (&running_mutex);
 	  running_threads++;
@@ -283,8 +327,6 @@ callback_from_skb_query (GObject * source_object,
       s = pthread_attr_destroy (&attr);
       if (s != 0)
 	printf ("failed to destroy the struct\n");
-
-
       while (running_threads > 0)
 	{
 	  sleep (1);
@@ -306,19 +348,19 @@ callback_from_skb_query (GObject * source_object,
     {
 
       size_t bytes = (memory * OneMB) + 10;
-      int *big_chunk = (int *) numa_alloc_onnode (bytes, node_id);
+      char *big_chunk = (char *) numa_alloc_onnode (bytes, node_id);
 
       memset (big_chunk, 0, bytes);
       if (big_chunk == NULL)
 	printf ("failed to allocate the memory on node %d\n", node_id);
 
 
-      int *start_addr = big_chunk;
-      int *end_addr = start_addr + ((memory * OneMB) + 10);
+      char *start_addr = big_chunk;
+      char *end_addr = start_addr + ((memory * OneMB) + 10);
 
       while (start_addr < end_addr)
 	{
-	  *start_addr = 1;
+	  *start_addr = 'a';
 	  start_addr++;
 
 	}
@@ -327,7 +369,7 @@ callback_from_skb_query (GObject * source_object,
 
       while (start_addr < end_addr)
 	{
-	  if (*start_addr++ != 1)
+	  if (*start_addr++ != 'a')
 	    printf ("Pattern does not match\n");
 	}
 
@@ -359,9 +401,17 @@ main (int argc, char *argv[])
 				      &error);
 
 
-  int cpu = atoi (argv[4]);
+ size_t pages =  sysconf(_SC_AVPHYS_PAGES);
+ size_t page_size = sysconf(_SC_PAGESIZE);
+ pages_per_thread = pages / num_threads; 
 
-  memory = atoi (argv[5]);
+ int cpu = atoi (argv[4]);
+
+  pages_per_thread = atoi(argv[5]);
+  
+  memory = (pages_per_thread*4096*num_threads)/(1024*1024);
+  
+  printf("memory s ==%u\n", memory);
 
   form_query (argv[2], argv[3], num_threads * cpu, memory);
 
