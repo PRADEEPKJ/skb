@@ -1,0 +1,21 @@
+CC=gcc -Wformat
+CFLAGS=-pthread
+GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+GST_CFLAGS=-I/usr/include/gio-unix-2.0/ 
+SKB_FLAGS =-I../../
+GTK_LIBS=-lglib-2.0
+GST_LIBS=-lgio-2.0 -lgobject-2.0
+NUMA_LIBS=-lnuma
+addfactclient: ../../Skb.c AddFact.c
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
+addnumainfo: ../../Skb.c getsysinfo.c	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -o $@
+numaapp: numa_app.c	
+	$(CC) -g $+ $(CFLAGS) $(NUMA_LIBS) -o $@
+numaapp30: numa_app_30.c	
+	$(CC) -g $+ $(CFLAGS) -o $@
+numashare: numa_app_share.c	
+	$(CC) -g $+ $(CFLAGS) $(NUMA_LIBS) -o $@
+
+
+
