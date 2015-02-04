@@ -9,6 +9,11 @@
       <arg name="query" type="s" direction="in"  />
       <arg name="reply" type="s" direction="out"  />
     </method>
+    <method name="DelFact">
+      <arg name="delfact" type="s" direction="in"  />
+      <arg name="reply" type="s" direction="out"  />
+    </method>
+
     <property name="Activated" type="b" access="read" />
   </interface>
 </node>
