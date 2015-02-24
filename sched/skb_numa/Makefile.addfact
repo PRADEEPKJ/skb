@@ -10,6 +10,8 @@ add_query_fact_client: ../../Skb.c AddFact.c
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
 test_ipc_client_interface: ../../Skb.c IPC_Interface_Client_Lib.c
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
+skbscheduler: ../../Skb.c skb_scheduler.c	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
 addnumainfo: ../../Skb.c getsysinfo.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -o $@
 numaapp: ../../Skb.c numa_app.c	
