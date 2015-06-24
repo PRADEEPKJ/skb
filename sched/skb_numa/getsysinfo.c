@@ -604,7 +604,12 @@ void add_num_nodes_info_to_skb(){
   Skb *proxy;
   GError *error;
   error = NULL;
-  char fact[80];
+  //char fact[1024];
+  
+  create_etcd_session();
+  char *fact = (char*)do_get("/node1/x86");
+  close_etcd_session();
+   
   proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
 				      G_DBUS_PROXY_FLAGS_NONE,
 				      "org.freedesktop.Skb",	/* bus name */
@@ -612,12 +617,22 @@ void add_num_nodes_info_to_skb(){
 				      NULL,	                /* GCancellable* */
 				      &error);
 
+printf("the fact is ============>%s\n",fact);
+
+#if 0
   for (ix = 0; ix < num_nodes; ix++){
 
 	  form_query("test_algo","delete_numa_node_info",ix);
 	  skb_call_query (proxy, query, NULL, NULL, NULL);
   }
+#endif
+	//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
+	//sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
 
+
+	skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
+  g_main_loop_quit (loop);
+#if 0
   for (ix = 0; ix < num_nodes; ix++)
     {
 
@@ -630,8 +645,31 @@ void add_num_nodes_info_to_skb(){
                node[ix].CPUs_free);
  	call_count++;
     }
+#endif
 }
 
+
+void add_sysinfo_to_etcd(){
+
+  int ix = 0;
+  char fact[80];
+  char sysfact[1024];
+  memset(sysfact, 0 , 1024);
+  char *sip        = getenv("IPADDR");
+
+  for (ix = 0; ix < num_nodes; ix++)
+    {
+
+	sprintf(sysfact+strlen(sysfact),"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld, '%s').",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
+               node[ix].CPUs_free,sip);
+    }
+    
+    create_etcd_session();
+    do_set(NULL,NULL,NULL,NULL,"node1");
+    do_set("node1/x86",sysfact,NULL,NULL,NULL);
+    close_etcd_session();
+
+}
 
 void
 get_node_mem_info ()
@@ -731,7 +769,8 @@ void child_proc ()
   get_node_mem_info ();
 
   loop = g_main_loop_new (NULL, FALSE);
-  add_num_nodes_info_to_skb();
+  //add_num_nodes_info_to_skb();
+    add_sysinfo_to_etcd();
 
   free (node);
 
@@ -740,7 +779,7 @@ void child_proc ()
 
 
 void
-main ()
+main (int argc, char* argv[])
 {
 
   num_cpus = get_num_cpus ();
@@ -750,9 +789,14 @@ main ()
   num_nodes = get_num_nodes ();
 
   printf ("Number of nodes==>%d\n", num_nodes);
-
+  if(atoi(argv[1]))
      child_proc();
-  g_main_loop_run (loop);
+  else
+  {
+        add_num_nodes_info_to_skb();
+  	g_main_loop_run (loop);
+	
+  }
 
 
 

@@ -16,7 +16,7 @@ test_timeout(X) :-
  %      findall((X,Y,Z,A,B,C), nodeinfo(X,Y,Z,A,B,C),Output).
 
 get_free_numa_node(Cpu,Memory,Output) :-
-        findall(X, (nodeinfo(X,_,_,A,_,C), A>Memory,C>Cpu),Output).
+        findall(X, (nodeinfo(X,_,_,A,_,C,_), A>Memory,C>Cpu),Output).
 
 get_meminfo_list(Output) :-
          findall((X,Y) ,meminfo(X,Y),Output).
