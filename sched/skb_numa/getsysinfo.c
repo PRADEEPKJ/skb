@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <values.h>
 #include "Skb.h"
+#include <pthread.h>
+#include <stdlib.h>
 
 
 
@@ -143,6 +145,8 @@ long sum_CPUs_total = 0;
 GMainLoop *loop;
 int call_count = 0;
 
+pthread_attr_t attr;
+
 void
 callback_from_skb_query (GObject *source_object,
                         GAsyncResult *res,
@@ -157,6 +161,7 @@ callback_from_skb_query (GObject *source_object,
  }
 
 }
+
 
 
 int
@@ -595,43 +600,59 @@ form_query (char *algo, char *fn_name, int node_id)
 
 }
 
+int chflag  = 0;
+
+void *watch_etcd_change (){
+   
+	 create_etcd_session();
+         while (1) {
+		 chflag  =  do_watch ("/node1/x86");
+		 sleep (1);
+	 }
+	close_etcd_session();
+}
+	
+	
+
+
 void add_num_nodes_info_to_skb(){
 
 
-// int num_nodes = get_num_nodes ();
 
   int ix = 0;
   Skb *proxy;
   GError *error;
   error = NULL;
-  //char fact[1024];
-  
   create_etcd_session();
-  char *fact = (char*)do_get("/node1/x86");
-  close_etcd_session();
-   
   proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
-				      G_DBUS_PROXY_FLAGS_NONE,
-				      "org.freedesktop.Skb",	/* bus name */
-				      "/org/freedesktop/Skb",	/* object */
-				      NULL,	                /* GCancellable* */
-				      &error);
+					      G_DBUS_PROXY_FLAGS_NONE,
+					      "org.freedesktop.Skb",	/* bus name */
+					      "/org/freedesktop/Skb",	/* object */
+					      NULL,	                /* GCancellable* */
+					      &error);
 
-printf("the fact is ============>%s\n",fact);
+  while (1) {
 
-#if 0
-  for (ix = 0; ix < num_nodes; ix++){
+	if ( chflag ) {
+		char *fact = (char*)do_get("/node1/x86");
+		printf("the fact is ============>%s\n",fact);
+ 		chflag = 0;
 
-	  form_query("test_algo","delete_numa_node_info",ix);
-	  skb_call_query (proxy, query, NULL, NULL, NULL);
-  }
-#endif
-	//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
-	//sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
+	#if 0
+	  for (ix = 0; ix < num_nodes; ix++){
 
-
-	skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
-  g_main_loop_quit (loop);
+		  form_query("test_algo","delete_numa_node_info",ix);
+		  skb_call_query (proxy, query, NULL, NULL, NULL);
+	  }
+	#endif
+		//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
+		//sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
+	        skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
+	}
+    }
+	close_etcd_session();
+        g_main_loop_quit (loop);
+ 
 #if 0
   for (ix = 0; ix < num_nodes; ix++)
     {
@@ -790,9 +811,21 @@ main (int argc, char* argv[])
 
   printf ("Number of nodes==>%d\n", num_nodes);
   if(atoi(argv[1]))
+  {
+   
      child_proc();
+
+  }
   else
   {
+	int s;
+	pthread_attr_t attr;
+        //struct thread_info *tinfo;
+        pthread_t thread_id; 
+        //pthread_init ( &attr);
+       // tinfo = calloc(1, sizeof(struct thread_info));
+        s = pthread_create(&thread_id, NULL,
+                                  &watch_etcd_change, NULL);
         add_num_nodes_info_to_skb();
   	g_main_loop_run (loop);
 	

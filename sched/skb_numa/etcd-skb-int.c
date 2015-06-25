@@ -52,7 +52,7 @@ do_get (char *key)
 
 
 int
-do_watch (etcd_session sess, char *pfx, char *index_str)
+do_watch ( char *pfx, char *index_str)
 {
         char            *key;
         char            *value;       
@@ -70,29 +70,32 @@ do_watch (etcd_session sess, char *pfx, char *index_str)
                 indexp = NULL;
         }
 
-        for (;;) {
+        //for (;;) {
                 res = etcd_watch(sess,pfx,&key,&value,indexp,&index_i);
                 if (res != ETCD_OK) {
                         fprintf(stderr,"etcd_watch failed\n");
-                        return !0;
+                        return -1;
                 }
                 printf("index is %d\n",index_i++);
                 if (key) {
                         if (value) {
                                 printf("key %s was set to %s\n",key,value);
                                 free(value);
+  				return 1;
                         }
                         else {
                                 printf("key %s was deleted\n",key);
+ 				return 0;
                         }
                         free(key);
                 }
                 else {
                         printf("I don't know what happened\n");
+			return 1;
                 }
                 indexp = &index_i;
                 sleep(1);
-        }
+        //}
         return 0;
 }
 

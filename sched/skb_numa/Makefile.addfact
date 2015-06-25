@@ -1,5 +1,5 @@
 CC=gcc -Wformat
-CFLAGS=-pthread
+CFLAGS=-lpthread
 GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 GST_CFLAGS=-I/usr/include/gio-unix-2.0/ 
 SKB_FLAGS =-I../../
@@ -14,7 +14,7 @@ test_ipc_client_interface: ../../Skb.c IPC_Interface_Client_Lib.c
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
 skbscheduler: ../../Skb.c skb_scheduler.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
-addnumainfo: ../../Skb.c getsysinfo.c etcd-skb-int.c	
+addsysinfo: ../../Skb.c getsysinfo.c etcd-skb-int.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(ETCD_LIBS)  -o $@
 numaapp: ../../Skb.c numa_app.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
