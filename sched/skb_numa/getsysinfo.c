@@ -604,7 +604,7 @@ int chflag  = 0;
 
 void *watch_etcd_change (){
    
-	 create_etcd_session();
+	 create_etcd_session(NULL);
          while (1) {
 		 chflag  =  do_watch ("/node1/x86");
 		 sleep (1);
@@ -623,7 +623,7 @@ void add_num_nodes_info_to_skb(){
   Skb *proxy;
   GError *error;
   error = NULL;
-  create_etcd_session();
+  create_etcd_session(NULL);
   proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
 					      G_DBUS_PROXY_FLAGS_NONE,
 					      "org.freedesktop.Skb",	/* bus name */
@@ -685,7 +685,7 @@ void add_sysinfo_to_etcd(){
                node[ix].CPUs_free,sip);
     }
     
-    create_etcd_session();
+    create_etcd_session(NULL);
     do_set(NULL,NULL,NULL,NULL,"node1");
     do_set("node1/x86",sysfact,NULL,NULL,NULL);
     close_etcd_session();
@@ -796,7 +796,6 @@ void child_proc ()
   free (node);
 
 }
-
 
 
 void

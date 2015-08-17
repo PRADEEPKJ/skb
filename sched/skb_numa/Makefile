@@ -1,54 +1,44 @@
-# Copyright (c) 2013, Red Hat
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.  Redistributions in binary
-# form must reproduce the above copyright notice, this list of conditions and
-# the following disclaimer in the documentation and/or other materials provided
-# with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+#CC=gcc -Wformat
+#CFLAGS=-lpthread
+CFLAGS  = -fPIC -O0 -Wall -lpthread
+#ifndef _ARCH
+#_ARCH := $(shell print_arch)
+#export _ARCH
+#endif
+ifdef _x86_64
+GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+else
+GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/aarch64-linux-gnu/glib-2.0/include
+endif
 
-CFLAGS	= -fPIC -g -O0 -Wall
-
-SHLIB	= libetcd.so
-S_OBJS	= etcd-api.o
-
-TESTER	= etcd-test
-T_OBJS	= etcd-test.o
-
-LEADER	= leader
-L_OBJS	= leader.o
-
-TARGETS	= $(SHLIB) $(TESTER)
-OBJECTS	= $(S_OBJS) $(T_OBJS) $(L_OBJS)
-
-all: $(TARGETS)
-
+GST_CFLAGS=-I/usr/include/gio-unix-2.0/ 
+SKB_FLAGS =-I../../
+GTK_LIBS=-lglib-2.0
+GST_LIBS=-lgio-2.0 -lgobject-2.0
+NUMA_LIBS=-lnuma
+ETCD_FLAGS=-I/
+ETCD_LIBS=-letcd
+S_OBJS  = etcd-skb-int.o etcd-api.o
+W_OBJS  : etcd-watch.o
+	cc -c etcd-watch.o
+SHLIB   = libetcd.so
+WATCH_TARGET=../../Skb.c etcd-watch.c
 $(SHLIB): $(S_OBJS)
-	$(CC) -shared -nostartfiles $(S_OBJS) -lcurl -lyajl -o $@
+	$(CC) $(ECD_FLAGS) -shared -nostartfiles $(S_OBJS) -lcurl -lyajl -o $@
 
-$(TESTER): $(T_OBJS) $(SHLIB)
-	$(CC) $(T_OBJS) -L. -letcd -o $@
-
-$(LEADER): $(L_OBJS) $(SHLIB)
-	$(CC) $(L_OBJS) -L. -letcd -o $@
-
+add_query_fact_client: ../../Skb.c AddFact.c
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
+test_ipc_client_interface: ../../Skb.c IPC_Interface_Client_Lib.c
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
+skbscheduler: ../../Skb.c skb_scheduler.c	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
+addsysinfo: ../../Skb.c getsysinfo.c	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(ETCD_LIBS)  -o $@
+watcher: $(WATCH_TARGET) $(SHLIB) 
+	$(CC) -g $(CFLAGS) $(WATCH_TARGET) $(GTK_CFLAGS) $(SKB_FLAGS) $(ETCD_FLAGS) $(GST_CFLAGS) $(GTK_LIBS) $(GST_LIBS) -L. -letcd -o $@
+numaapp: ../../Skb.c numa_app.c	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
+numaapp30: ../../Skb.c numa_app_30.c	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
 clean:
-	rm -f $(OBJECTS)
-
-clobber distclean realclean spotless: clean
-	rm -f $(TARGETS)
+	rm -rf *.o libetcd.so

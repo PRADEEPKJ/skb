@@ -70,8 +70,8 @@ do_watch ( char *pfx, char *index_str)
                 indexp = NULL;
         }
 
-        //for (;;) {
-                res = etcd_watch(sess,pfx,&key,&value,indexp,&index_i);
+        for (;;) {
+                res = etcd_watch(sess,index_str,&key,&value,indexp,&index_i);
                 if (res != ETCD_OK) {
                         fprintf(stderr,"etcd_watch failed\n");
                         return -1;
@@ -95,7 +95,7 @@ do_watch ( char *pfx, char *index_str)
                 }
                 indexp = &index_i;
                 sleep(1);
-        //}
+        }
         return 0;
 }
 
@@ -246,19 +246,23 @@ print_usage (char *prog)
         return !0;
 } 
 
-int create_etcd_session( ){
+int create_etcd_session(char* servers ){
 
-       char            *servers        = getenv("ETCD_SERVERS");
+       if(servers == NULL)
+	       servers = getenv("ETCD_SERVERS");
+			 
        sess = etcd_open_str(strdup(servers));
         if (!sess) {
                 fprintf(stderr,"etcd_open failed\n");
-                return !0;
+                return -1;
         }
+    return 0;
  }
 
 int close_etcd_session(){
 
      etcd_close_str(sess);
+     return 0;
 }
 
 

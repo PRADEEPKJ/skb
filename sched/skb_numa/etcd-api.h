@@ -212,3 +212,8 @@ etcd_result     etcd_lock (etcd_session session_as_void, char *key,
 etcd_result     etcd_unlock (etcd_session session_as_void, char *key,
                              char *index);
 
+int do_watch (char *pfx, char *index_str);
+int do_set(char* key, char*value, char *precond, char *ttl, char *dir);
+char* do_get(char *key);
+int create_etcd_session(char* servers );
+int close_etcd_session();

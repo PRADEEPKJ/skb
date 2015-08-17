@@ -27,7 +27,7 @@ main (int argc, char *argv[])
   if (!(strcmp (argv[1], "-a")))
       skb_call_add_fact (proxy, argv[2], NULL, NULL, NULL);
   else if (!(strcmp (argv[1], "-q")))
-      skb_call_query_fact (proxy, argv[2], NULL, NULL, NULL);
+      skb_call_query (proxy, argv[2], NULL, NULL, NULL);
   else
 	  printf ("Wrong option\n");
 }
