@@ -70,7 +70,7 @@ do_watch ( char *pfx, char *index_str)
                 indexp = NULL;
         }
 
-        for (;;) {
+        //for (;;) {
                 res = etcd_watch(sess,index_str,&key,&value,indexp,&index_i);
                 if (res != ETCD_OK) {
                         fprintf(stderr,"etcd_watch failed\n");
@@ -95,7 +95,7 @@ do_watch ( char *pfx, char *index_str)
                 }
                 indexp = &index_i;
                 sleep(1);
-        }
+        //}
         return 0;
 }
 

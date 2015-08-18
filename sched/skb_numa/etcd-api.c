@@ -474,6 +474,7 @@ etcd_set_one (_etcd_session *session, const char *key, const char *value,
                 goto *err_label;
         }
         err_label = &&free_url;
+	printf("the path s ==>%s\n",url);
 
         if (is_lock) {
                 if (precond) {

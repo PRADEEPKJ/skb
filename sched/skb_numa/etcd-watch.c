@@ -12,31 +12,31 @@
 
 char *key;
 
-void read_and_update_master(char *server, char *direct) {
+void read_and_update_master(char *write_server, char *direct) {
 
 	//char fact[1024];
 	//memset(fact, 0 , 1024);
 	
-	printf("argv[1]===>%s, argv[2]==>%s\n",server, direct);
 	char *fact = (char*)do_get(direct);//read data
-	char *node = (char*)getenv("WATCHSERVERS");
-	printf("value changed is ==>%s\n",node);
-	create_etcd_session(node);
-	do_set(node,fact,NULL,NULL,NULL);//update the data
+	//char *node = (char*)getenv("WATCHSERVERS");
+	printf("argv[1]===>%s, argv[2]==>%s\n",write_server, direct);
+        close_etcd_session();//close read session
+	create_etcd_session(write_server);
+	do_set(direct,fact,NULL,NULL,NULL);//update the data
         close_etcd_session();
 }
 
 
-void watch_etcd_change (char *server, char *direct){
+void watch_etcd_change (char *read_server, char *write_server, char *direct){
    
-	 int chflag;
-	 create_etcd_session(server);
-	printf("argv[1]===>%s, argv[2]==>%s\n",server, direct);
+	int chflag;
+	printf("argv[1]===>%s, argv[2]==>%s\n, argv[3]==>%s",read_server,write_server, direct);
          
-         while (1) {
-		 chflag  =  do_watch (server, direct);
+        while (1) {
+		create_etcd_session(read_server);
+		 chflag  =  do_watch (read_server, direct);
 		 if(chflag == 1)
-			read_and_update_master(server, direct);
+			read_and_update_master(write_server, direct);
 		  
 		 sleep (1);
 	 }
@@ -48,9 +48,8 @@ int main (int argc, char* argv[])
 {
 
 	printf("argv[1]===>%s\n",argv[1]);
-
-	//watch server (argv[1]) and dirctory/key (argv[2])
-	watch_etcd_change (argv[1], argv[2]);
+	//watch server (argv[1]), and dirctory/key (argv[2]), update the server (argv[3])
+	watch_etcd_change (argv[1], argv[2], argv[3]);
 	return 0;
 
 }
