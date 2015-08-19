@@ -107,6 +107,8 @@ typedef struct id_list
 
 int num_cpus = 0;
 int num_nodes = 0;
+char *sysIP;
+char *sysName;
 
 
 typedef struct node_data
@@ -676,18 +678,17 @@ void add_sysinfo_to_etcd(){
   char fact[80];
   char sysfact[1024];
   memset(sysfact, 0 , 1024);
-  char *sip        = getenv("IPADDR");
 
   for (ix = 0; ix < num_nodes; ix++)
     {
 
 	sprintf(sysfact+strlen(sysfact),"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld, '%s').",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-               node[ix].CPUs_free,sip);
+               node[ix].CPUs_free,sysIP);
     }
     
     create_etcd_session(NULL);
-    do_set(NULL,NULL,NULL,NULL,"node1");
-    do_set("node1/x86",sysfact,NULL,NULL,NULL);
+    do_set(NULL,NULL,NULL,NULL,sysName);
+    do_set(sysName,sysfact,NULL,NULL,NULL);
     close_etcd_session();
 
 }
@@ -809,10 +810,15 @@ main (int argc, char* argv[])
   num_nodes = get_num_nodes ();
 
   printf ("Number of nodes==>%d\n", num_nodes);
+  sysIP = argv[1];
+  sysName = argv[2];
+
+  child_proc();
+#if 0
   if(atoi(argv[1]))
   {
-   
-     child_proc();
+      
+  	child_proc();
 
   }
   else
@@ -829,6 +835,7 @@ main (int argc, char* argv[])
   	g_main_loop_run (loop);
 	
   }
+#endif
 
 
 

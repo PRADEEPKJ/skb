@@ -1,14 +1,9 @@
-#CC=gcc -Wformat
-#CFLAGS=-lpthread
 CFLAGS  = -fPIC -O0 -Wall -lpthread
-#ifndef _ARCH
-#_ARCH := $(shell print_arch)
-#export _ARCH
-#endif
-ifdef _x86_64
-GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+ARCH := $(shell uname -m 2>/dev/null)
+ifeq ($(ARCH), x86_64)
+	GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 else
-GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/aarch64-linux-gnu/glib-2.0/include
+	GTK_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/aarch64-linux-gnu/glib-2.0/include
 endif
 
 GST_CFLAGS=-I/usr/include/gio-unix-2.0/ 
@@ -33,7 +28,7 @@ test_ipc_client_interface: ../../Skb.c IPC_Interface_Client_Lib.c
 skbscheduler: ../../Skb.c skb_scheduler.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
 addsysinfo: ../../Skb.c getsysinfo.c	
-	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(ETCD_LIBS)  -o $@
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -L.  $(ETCD_LIBS)  -o $@
 watcher: $(WATCH_TARGET) $(SHLIB) 
 	$(CC) -g $(CFLAGS) $(WATCH_TARGET) $(GTK_CFLAGS) $(SKB_FLAGS) $(ETCD_FLAGS) $(GST_CFLAGS) $(GTK_LIBS) $(GST_LIBS) -L. -letcd -o $@
 numaapp: ../../Skb.c numa_app.c	
