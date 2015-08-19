@@ -677,6 +677,8 @@ void add_sysinfo_to_etcd(){
   int ix = 0;
   char fact[80];
   char sysfact[1024];
+  int cpu_free = 0;
+  int mem_free = 0;
   memset(sysfact, 0 , 1024);
 
   for (ix = 0; ix < num_nodes; ix++)
@@ -684,11 +686,28 @@ void add_sysinfo_to_etcd(){
 
 	sprintf(sysfact+strlen(sysfact),"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld, '%s').",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
                node[ix].CPUs_free,sysIP);
+        cpu_free += node[ix].CPUs_free;
+	mem_free += node[ix].MBs_free;
+	
     }
     
-    create_etcd_session(NULL);
-    do_set(NULL,NULL,NULL,NULL,sysName);
-    do_set(sysName,sysfact,NULL,NULL,NULL);
+    printf("node info s ===>%s\n",sysfact);
+    create_etcd_session(sysIP);
+
+    //create local and global directories
+    do_set(NULL,NULL,NULL,NULL,"local");
+    do_set(NULL,NULL,NULL,NULL,"global");
+
+    //store the data which is shared between the local cluster
+    sprintf(fact,"local/%s",sysName);
+    do_set(fact,sysfact,NULL,NULL,NULL);
+
+    //store the data which is shared between the higher level cluster 
+    sprintf(fact,"global/%s",sysName);
+
+    sprintf(sysfact,"sysinfo(%d, %d, '%s').",cpu_free, mem_free, sysIP);
+    do_set(fact,sysfact,NULL,NULL,NULL);
+
     close_etcd_session();
 
 }
@@ -792,7 +811,8 @@ void child_proc ()
 
   loop = g_main_loop_new (NULL, FALSE);
   //add_num_nodes_info_to_skb();
-    add_sysinfo_to_etcd();
+  printf("b4 adding to etcd\n");
+  add_sysinfo_to_etcd();
 
   free (node);
 
