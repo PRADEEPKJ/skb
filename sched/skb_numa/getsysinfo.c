@@ -33,6 +33,9 @@
 #include "Skb.h"
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/utsname.h>
+#include <string.h>
+
 
 
 
@@ -148,6 +151,19 @@ GMainLoop *loop;
 int call_count = 0;
 
 pthread_attr_t attr;
+
+char m_type[20];
+
+int get_machine_type ()
+{
+
+	struct utsname *un = malloc (sizeof (struct utsname)); 
+        uname(un);
+	printf("arch is ===>%s\n",un->machine);
+	strncpy(m_type, un->machine, strlen(un->machine));
+	free(un);
+
+}
 
 void
 callback_from_skb_query (GObject *source_object,
@@ -690,6 +706,7 @@ void add_sysinfo_to_etcd(){
 	mem_free += node[ix].MBs_free;
 	
     }
+
     
     printf("node info s ===>%s\n",sysfact);
     create_etcd_session(sysIP);
@@ -705,7 +722,7 @@ void add_sysinfo_to_etcd(){
     //store the data which is shared between the higher level cluster 
     sprintf(fact,"global/%s",sysName);
 
-    sprintf(sysfact,"sysinfo(%d, %d, '%s').",cpu_free, mem_free, sysIP);
+    sprintf(sysfact,"sysinfo(%s, %d, %d, '%s').",m_type, cpu_free, mem_free, sysIP);
     do_set(fact,sysfact,NULL,NULL,NULL);
 
     close_etcd_session();
@@ -832,6 +849,8 @@ main (int argc, char* argv[])
   printf ("Number of nodes==>%d\n", num_nodes);
   sysIP = argv[1];
   sysName = argv[2];
+  
+  get_machine_type();
 
   child_proc();
 #if 0

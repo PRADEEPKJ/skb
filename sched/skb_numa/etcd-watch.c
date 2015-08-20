@@ -2,6 +2,9 @@
 #include "etcd-api.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/utsname.h>
+#include <string.h>
+
 
 
 /*This file implements the partial sharing of data
@@ -11,6 +14,7 @@
 */
 
 char *key;
+
 
 void read_and_update_master(char *write_server, char *direct) {
 
