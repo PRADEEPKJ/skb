@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <sys/utsname.h>
 #include <string.h>
+#include <stdbool.h>
 
 
 
@@ -112,16 +113,17 @@ int num_cpus = 0;
 int num_nodes = 0;
 char *sysIP;
 char *sysName;
+bool numa_sys = false;
 
 
 typedef struct node_data
 {
+  id_list_p cpu_list_p;
   uint64_t node_id;
   uint64_t MBs_total;
   uint64_t MBs_free;
   uint64_t CPUs_total;		// scaled * ONE_HUNDRED
   uint64_t CPUs_free;		// scaled * ONE_HUNDRED
-  id_list_p cpu_list_p;
 } node_data_t;
 
 
@@ -154,29 +156,31 @@ pthread_attr_t attr;
 
 char m_type[20];
 
-int get_machine_type ()
+int
+get_machine_type ()
 {
 
-	struct utsname *un = malloc (sizeof (struct utsname)); 
-        uname(un);
-	printf("arch is ===>%s\n",un->machine);
-	strncpy(m_type, un->machine, strlen(un->machine));
-	free(un);
+  struct utsname *un = malloc (sizeof (struct utsname));
+  uname (un);
+  printf ("arch is ===>%s\n", un->machine);
+  strncpy (m_type, un->machine, strlen (un->machine));
+  free (un);
 
 }
 
 void
-callback_from_skb_query (GObject *source_object,
-                        GAsyncResult *res,
-                        gpointer user_data){
+callback_from_skb_query (GObject * source_object,
+			 GAsyncResult * res, gpointer user_data)
+{
 
-  fprintf(stdout,"the function called back with the results\n");
-  fflush(stdout);
-  if(call_count-- <= 1) {
-	  g_main_loop_unref (loop);
-	  g_main_loop_quit (loop);
+  fprintf (stdout, "the function called back with the results\n");
+  fflush (stdout);
+  if (call_count-- <= 1)
+    {
+      g_main_loop_unref (loop);
+      g_main_loop_quit (loop);
 
- }
+    }
 
 }
 
@@ -251,7 +255,6 @@ get_cpus_idle_data ()
 {
   // Parse idle percents from CPU stats in /proc/stat cpu<N> lines
 
-  int num_cpus = get_num_cpus ();
   static FILE *fs;
   if (fs != NULL)
     {
@@ -265,7 +268,7 @@ get_cpus_idle_data ()
 	  numad_log (LOG_CRIT, "Cannot get /proc/stat contents\n");
 	  exit (EXIT_FAILURE);
 	}
-         }
+    }
   // Use the other cpu_data buffer...
 //  int new = 1 - cur_cpu_data_buf;
   //int new = 0;
@@ -327,11 +330,9 @@ get_cpus_idle_data ()
 	    }
 	  uint64_t idle;
 	  CONVERT_DIGITS_TO_NUM (p, idle);
-	  //printf("cpu %d idle==>%d\n",cpu_id, idle);
 	  cpu_data_buf[timex].idle[cpu_id] = idle;
 	}
     }
-  //cur_cpu_data_buf = new;
 }
 
 
@@ -446,7 +447,6 @@ void
 get_cpus_usage_per_node ()
 {
 
-  int num_nodes = get_num_nodes ();
   struct dirent **namelist;
   char fname[FNAME_SIZE];
   int threads_per_core = 0;
@@ -457,7 +457,6 @@ get_cpus_usage_per_node ()
 
   CLEAR_CPU_LIST (all_cpus_list_p);
   CLEAR_NODE_LIST (all_nodes_list_p);
-
 
   int num_files =
     scandir ("/sys/devices/system/node", &namelist, node_and_digits, NULL);
@@ -477,20 +476,21 @@ get_cpus_usage_per_node ()
       node[node_ix].node_id = node_id;
       //printf ("node id is ==>%d\n", node_id);
       ADD_ID_TO_LIST (node_id, all_nodes_list_p);
-     // printf ("node id is ==>%d\n", node_id);
+      // printf ("node id is ==>%d\n", node_id);
       snprintf (fname, FNAME_SIZE, "/sys/devices/system/node/node%d/cpulist",
 		node_id);
       int fd = open (fname, O_RDONLY, 0);
-      
-      if(fd < 0)
-          printf("memtotal is---------------->%s \n",strerror(errno));
+
+      if (fd < 0)
+	printf ("failed to open cpulist file --------------->%s \n",
+		strerror (errno));
 
       if ((fd >= 0) && (read (fd, buf, BIG_BUF_SIZE) > 0))
 	{
 	  CLEAR_CPU_LIST (node[node_ix].cpu_list_p);
 	  //printf("after clear=============\n");
 	  n = add_ids_to_list_from_str (node[node_ix].cpu_list_p, buf);
-	  n = NUM_IDS_IN_LIST(node[node_ix].cpu_list_p); 
+	  n = NUM_IDS_IN_LIST (node[node_ix].cpu_list_p);
 	  //printf ("number of cpus ==>%d\n", n);
 	}
 
@@ -519,39 +519,70 @@ get_cpus_usage_per_node ()
 	  //printf("total cpus usage ==>%d\n",  node[node_ix].CPUs_total);
 	}
 #endif
+      close (fd);
       node[node_ix].CPUs_total = n * ONE_HUNDRED;
       sum_CPUs_total += node[node_ix].CPUs_total;
       //printf ("total cpus usage ==>%d\n", sum_CPUs_total);
-      close (fd);
 
       int old_cpu_data_buf = 1 - cur_cpu_data_buf;
-      if (cpu_data_buf[old_cpu_data_buf].time_stamp > 0) 
+      if (cpu_data_buf[old_cpu_data_buf].time_stamp > 0)
 	{
-      	 // printf("the index is ==>%d\n",new);
+	  // printf("the index is ==>%d\n",new);
 	  uint64_t idle_ticks = 0;
 	  int cpu = 0;
 	  int num_lcpus = NUM_IDS_IN_LIST (node[node_ix].cpu_list_p);
-	  printf("Number of lcpus are ==>%d\n",num_lcpus);
+
+	  printf ("Number of lcpus are ==>%d\n", num_lcpus);
 	  int num_cpus_to_process = num_lcpus;
 	  while (num_cpus_to_process)
 	    {
 	      if (ID_IS_IN_LIST (cpu, node[node_ix].cpu_list_p))
 		{
 		  idle_ticks += cpu_data_buf[timex].idle[cpu]
-		    - cpu_data_buf[timex-1].idle[cpu];
+		    - cpu_data_buf[timex - 1].idle[cpu];
 		  num_cpus_to_process -= 1;
 		}
 	      cpu += 1;
 	    }
 	  uint64_t time_diff = cpu_data_buf[timex].time_stamp
-	    - cpu_data_buf[timex-1].time_stamp;
- 
-	   printf("num idle ticks ==>%d\n, time diff is ==>%d\n",idle_ticks,time_diff);  
+	    - cpu_data_buf[timex - 1].time_stamp;
+
+	  printf ("num idle ticks ==>%d\n, time diff is ==>%d\n", idle_ticks,
+		  time_diff);
 
 	  node[node_ix].CPUs_free = (idle_ticks * ONE_HUNDRED) / time_diff;
 
 	}
     }
+}
+
+int
+get_total_cpu_usage ()
+{
+
+  uint64_t idle_ticks = 0;
+  uint64_t num_cpus_to_process = num_cpus;
+  int cpu = 0;
+  int node_ix = 0;
+
+  while (num_cpus_to_process)
+    {
+      idle_ticks += cpu_data_buf[timex].idle[cpu]
+	- cpu_data_buf[timex - 1].idle[cpu];
+      num_cpus_to_process -= 1;
+      cpu += 1;
+    }
+  uint64_t time_diff = cpu_data_buf[timex].time_stamp
+    - cpu_data_buf[timex - 1].time_stamp;
+
+  printf ("num idle ticks ==>%d\n, time diff is ==>%d\n", idle_ticks,
+	  time_diff);
+
+  node[node_ix].CPUs_free = (idle_ticks * ONE_HUNDRED) / time_diff;
+
+  printf ("total idleness===>%d\n", node[node_ix].CPUs_free);
+
+
 }
 
 
@@ -592,7 +623,7 @@ void
 show_nodes_info ()
 {
 
-  int num_nodes = get_num_nodes ();
+  //int num_nodes = get_num_nodes ();
 
   int ix = 0;
   for (ix = 0; ix < num_nodes; ix++)
@@ -601,39 +632,44 @@ show_nodes_info ()
 
       fprintf (stdout,
 	       "Node %d:  num cpus %d: MBs_total %ld, MBs_free %6ld, CPUs_total %ld, CPUs_free %4ld \n ",
-	       ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-	       node[ix].CPUs_free);
+	       ix, NUM_IDS_IN_LIST (node[ix].cpu_list_p), node[ix].MBs_total,
+	       node[ix].MBs_free, node[ix].CPUs_total, node[ix].CPUs_free);
 
     }
 }
 
 
- char query[100];
+char query[100];
 void
 form_query (char *algo, char *fn_name, int node_id)
 {
 
-  sprintf (query, "[%s], %s(%d,%d,L)", algo, fn_name,node_id,node_id);
+  sprintf (query, "[%s], %s(%d,%d,L)", algo, fn_name, node_id, node_id);
   printf ("query is =========>%s\n", query);
 
 }
 
-int chflag  = 0;
+int chflag = 0;
 
-void *watch_etcd_change (){
-   
-	 create_etcd_session(NULL);
-         while (1) {
-		 chflag  =  do_watch ("/node1/x86");
-		 sleep (1);
-	 }
-	close_etcd_session();
+void *
+watch_etcd_change ()
+{
+
+  create_etcd_session (NULL);
+  while (1)
+    {
+      chflag = do_watch ("/node1/x86");
+      sleep (1);
+    }
+  close_etcd_session ();
 }
-	
-	
 
 
-void add_num_nodes_info_to_skb(){
+
+
+void
+add_num_nodes_info_to_skb ()
+{
 
 
 
@@ -641,91 +677,108 @@ void add_num_nodes_info_to_skb(){
   Skb *proxy;
   GError *error;
   error = NULL;
-  create_etcd_session(NULL);
-  proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
-					      G_DBUS_PROXY_FLAGS_NONE,
-					      "org.freedesktop.Skb",	/* bus name */
-					      "/org/freedesktop/Skb",	/* object */
-					      NULL,	                /* GCancellable* */
-					      &error);
+  create_etcd_session (NULL);
+  proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, "org.freedesktop.Skb",	/* bus name */
+				      "/org/freedesktop/Skb",	/* object */
+				      NULL,	/* GCancellable* */
+				      &error);
 
-  while (1) {
+  while (1)
+    {
 
-	if ( chflag ) {
-		char *fact = (char*)do_get("/node1/x86");
-		printf("the fact is ============>%s\n",fact);
- 		chflag = 0;
+      if (chflag)
+	{
+	  char *fact = (char *) do_get ("/node1/x86");
+	  printf ("the fact is ============>%s\n", fact);
+	  chflag = 0;
 
-	#if 0
-	  for (ix = 0; ix < num_nodes; ix++){
+#if 0
+	  for (ix = 0; ix < num_nodes; ix++)
+	    {
 
-		  form_query("test_algo","delete_numa_node_info",ix);
-		  skb_call_query (proxy, query, NULL, NULL, NULL);
-	  }
-	#endif
-		//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
-		//sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
-	        skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
+	      form_query ("test_algo", "delete_numa_node_info", ix);
+	      skb_call_query (proxy, query, NULL, NULL, NULL);
+	    }
+#endif
+	  //sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
+	  //sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
+	  skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query,
+			     NULL);
 	}
     }
-	close_etcd_session();
-        g_main_loop_quit (loop);
- 
+  close_etcd_session ();
+  g_main_loop_quit (loop);
+
 #if 0
   for (ix = 0; ix < num_nodes; ix++)
     {
 
-	sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-               node[ix].CPUs_free);
-	skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
-	fprintf (stdout,
-               " added to skb Node %d:  num cpus %d: MBs_total %ld, MBs_free %6ld, CPUs_total %ld, CPUs_free %4ld \n ",
-               ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-               node[ix].CPUs_free);
- 	call_count++;
+      sprintf (fact, "nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)", ix,
+	       NUM_IDS_IN_LIST (node[ix].cpu_list_p), node[ix].MBs_total,
+	       node[ix].MBs_free, node[ix].CPUs_total, node[ix].CPUs_free);
+      skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
+      fprintf (stdout,
+	       " added to skb Node %d:  num cpus %d: MBs_total %ld, MBs_free %6ld, CPUs_total %ld, CPUs_free %4ld \n ",
+	       ix, NUM_IDS_IN_LIST (node[ix].cpu_list_p), node[ix].MBs_total,
+	       node[ix].MBs_free, node[ix].CPUs_total, node[ix].CPUs_free);
+      call_count++;
     }
 #endif
 }
 
 
-void add_sysinfo_to_etcd(){
+void
+add_sysinfo_to_etcd ()
+{
 
   int ix = 0;
   char fact[80];
   char sysfact[1024];
   int cpu_free = 0;
   int mem_free = 0;
-  memset(sysfact, 0 , 1024);
+  memset (sysfact, 0, 1024);
 
   for (ix = 0; ix < num_nodes; ix++)
     {
 
-	sprintf(sysfact+strlen(sysfact),"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld, '%s').",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-               node[ix].CPUs_free,sysIP);
-        cpu_free += node[ix].CPUs_free;
-	mem_free += node[ix].MBs_free;
-	
+      if (numa_sys)
+	{
+	  sprintf (sysfact + strlen (sysfact),
+		   "nodeinfo(%d, %d, %ld, %6ld, %ld, %ld, '%s').", ix,
+		   NUM_IDS_IN_LIST (node[ix].cpu_list_p), node[ix].MBs_total,
+		   node[ix].MBs_free, node[ix].CPUs_total, node[ix].CPUs_free,
+		   sysIP);
+	}
+      else
+	sprintf (sysfact + strlen (sysfact),
+		 "nodeinfo(%d, %d, %ld, %6ld, %ld, %ld, '%s').", ix, num_cpus,
+		 node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
+		 node[ix].CPUs_free, sysIP);
+      cpu_free += node[ix].CPUs_free;
+      mem_free += node[ix].MBs_free;
+
     }
 
-    
-    printf("node info s ===>%s\n",sysfact);
-    create_etcd_session(sysIP);
 
-    //create local and global directories
-    do_set(NULL,NULL,NULL,NULL,"local");
-    do_set(NULL,NULL,NULL,NULL,"global");
+  printf ("node info s ===>%s\n", sysfact);
+  create_etcd_session (sysIP);
 
-    //store the data which is shared between the local cluster
-    sprintf(fact,"local/%s",sysName);
-    do_set(fact,sysfact,NULL,NULL,NULL);
+  //create local and global directories
+  do_set (NULL, NULL, NULL, NULL, "local");
+  do_set (NULL, NULL, NULL, NULL, "global");
 
-    //store the data which is shared between the higher level cluster 
-    sprintf(fact,"global/%s",sysName);
+  //store the data which is shared between the local cluster
+  sprintf (fact, "local/%s", sysName);
+  do_set (fact, sysfact, NULL, NULL, NULL);
 
-    sprintf(sysfact,"sysinfo(%s, %d, %d, '%s').",m_type, cpu_free, mem_free, sysIP);
-    do_set(fact,sysfact,NULL,NULL,NULL);
+  //store the data which is shared between the higher level cluster 
+  sprintf (fact, "global/%s", sysName);
 
-    close_etcd_session();
+  sprintf (sysfact, "sysinfo(%s, %d, %d, '%s').", m_type, cpu_free, mem_free,
+	   sysIP);
+  do_set (fact, sysfact, NULL, NULL, NULL);
+
+  close_etcd_session ();
 
 }
 
@@ -733,7 +786,7 @@ void
 get_node_mem_info ()
 {
 
-  int num_nodes = get_num_nodes ();
+  //int num_nodes = get_num_nodes ();
 
   int node_ix;
 
@@ -743,18 +796,23 @@ get_node_mem_info ()
 
   errno = 0;
 
+  printf ("nm nodes====================>%d\n", num_nodes);
 
   for (node_ix = 0; (node_ix < num_nodes); node_ix++)
     {
 
       int node_id = node[node_ix].node_id;
       // Get available memory info from node<N>/meminfo file
-      snprintf (fname, FNAME_SIZE, "/sys/devices/system/node/node%d/meminfo",
-		node_id);
+      if (numa_sys)
+	snprintf (fname, FNAME_SIZE,
+		  "/sys/devices/system/node/node%d/meminfo", node_id);
+      else
+	snprintf (fname, FNAME_SIZE, "/proc/meminfo");
+
       int fd = open (fname, O_RDONLY, 0);
-	printf("the file name is=====>%s\n",fname);
-	if(fd < 0)
-          printf("memtotal is---------------->%s \n",strerror(errno));
+      printf ("the file name is=====>%s\n", fname);
+      if (fd < 0)
+	printf ("memtotal is---------------->%s \n", strerror (errno));
       if ((fd >= 0) && (read (fd, buf, BIG_BUF_SIZE) > 0))
 	{
 	  close (fd);
@@ -775,6 +833,7 @@ get_node_mem_info ()
 	    }
 	  CONVERT_DIGITS_TO_NUM (p, KB);
 	  node[node_ix].MBs_total = (KB / KILOBYTE);
+	  printf ("node %d has mem %d \n", node_ix, node[node_ix].MBs_total);
 	  if (node[node_ix].MBs_total < 1)
 	    {
 	      // If a node has zero memory, remove it from the all_nodes_list...
@@ -798,38 +857,50 @@ get_node_mem_info ()
 	  node[node_ix].MBs_free = (KB / KILOBYTE);
 	}
     }
+  return;
 }
 
-void child_proc ()
+
+
+void
+child_proc ()
 {
 
- 
-  node = (node_data_t *) realloc (node, ( sizeof (node_data_t) * num_nodes));
+  node = (node_data_t *) calloc (sizeof (node_data_t), num_nodes);
+  printf ("num nodes ==>%d\n", num_nodes);
+  node = (node_data_t *) calloc (sizeof (struct node_data), num_nodes);
 
-   int ix ;
-   for ( ix = 0;  (ix < num_nodes);  ix++) {
-	// If new > old, nullify new node_data pointers
-        node[ix].cpu_list_p = NULL;
-   }
+  int ix;
+  for (ix = 0; (ix < num_nodes); ix++)
+    {
+      // If new > old, nullify new node_data pointers
+      node[ix].cpu_list_p = NULL;
+    }
 
+  printf ("num cpus in child_proc ==>%d\n", num_cpus);
   cpu_data_buf[0].idle = malloc (num_cpus * sizeof (uint64_t));
   cpu_data_buf[1].idle = malloc (num_cpus * sizeof (uint64_t));
   if ((cpu_data_buf[0].idle == NULL) || (cpu_data_buf[1].idle == NULL))
-  {
+    {
       numad_log (LOG_CRIT, "cpu_data_buf malloc failed\n");
       exit (EXIT_FAILURE);
-  }
+    }
   get_cpus_idle_data ();
   sleep (2);
   timex++;
   get_cpus_idle_data ();
-  get_cpus_usage_per_node ();
+  if (numa_sys)
+    get_cpus_usage_per_node ();
+  else
+    get_total_cpu_usage ();	//UMA system
+
   get_node_mem_info ();
 
+  //show_nodes_info ();
   loop = g_main_loop_new (NULL, FALSE);
   //add_num_nodes_info_to_skb();
-  printf("b4 adding to etcd\n");
-  add_sysinfo_to_etcd();
+  printf ("b4 adding to etcd\n");
+  add_sysinfo_to_etcd ();
 
   free (node);
 
@@ -837,48 +908,64 @@ void child_proc ()
 
 
 void
-main (int argc, char* argv[])
+main (int argc, char *argv[])
 {
+
+
+  if (numa_available () > 0)
+    {
+      numa_sys = true;
+      printf ("Numa available\n");
+    }
+  else
+    {
+      printf ("NUma not avaialale\n");
+    }
 
   num_cpus = get_num_cpus ();
 
   printf ("Number of cpus==>%d\n", num_cpus);
 
-  num_nodes = get_num_nodes ();
+  if (numa_sys)
+    num_nodes = get_num_nodes ();
+  else
+    num_nodes = 1;
 
   printf ("Number of nodes==>%d\n", num_nodes);
   sysIP = argv[1];
   sysName = argv[2];
-  
-  get_machine_type();
 
-  child_proc();
+  get_machine_type ();
+
+  child_proc ();
+
+
+
+
 #if 0
-  if(atoi(argv[1]))
-  {
-      
-  	child_proc();
+  if (atoi (argv[1]))
+    {
 
-  }
+      child_proc ();
+
+    }
   else
-  {
-	int s;
-	pthread_attr_t attr;
-        //struct thread_info *tinfo;
-        pthread_t thread_id; 
-        //pthread_init ( &attr);
-       // tinfo = calloc(1, sizeof(struct thread_info));
-        s = pthread_create(&thread_id, NULL,
-                                  &watch_etcd_change, NULL);
-        add_num_nodes_info_to_skb();
-  	g_main_loop_run (loop);
-	
-  }
+    {
+      int s;
+      pthread_attr_t attr;
+      //struct thread_info *tinfo;
+      pthread_t thread_id;
+      //pthread_init ( &attr);
+      // tinfo = calloc(1, sizeof(struct thread_info));
+      s = pthread_create (&thread_id, NULL, &watch_etcd_change, NULL);
+      add_num_nodes_info_to_skb ();
+      g_main_loop_run (loop);
+
+    }
 #endif
 
 
 
-   //show_nodes_info ();
 
 
 }
