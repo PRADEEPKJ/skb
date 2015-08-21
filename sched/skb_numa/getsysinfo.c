@@ -919,7 +919,7 @@ main (int argc, char *argv[])
        
   }
 
-  if (numa_available () > 0)
+  if (numa_available () >= 0)
     {
       numa_sys = true;
       printf ("Numa available\n");
