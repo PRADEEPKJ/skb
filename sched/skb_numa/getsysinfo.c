@@ -911,6 +911,13 @@ void
 main (int argc, char *argv[])
 {
 
+  if (argc < 3 )
+  {
+	printf("usage is ./addsysinfo etcd-server-address systemname\n");
+	printf("example is ./addsysinfo 192.168.0.102:7001 x86xeon \n");
+	exit(0);
+       
+  }
 
   if (numa_available () > 0)
     {
