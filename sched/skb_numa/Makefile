@@ -28,7 +28,9 @@ test_ipc_client_interface: ../../Skb.c IPC_Interface_Client_Lib.c
 skbscheduler: ../../Skb.c skb_scheduler.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
 addsysinfo: ../../Skb.c getsysinfo.c	
-	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -L.  $(ETCD_LIBS)  -o $@
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -L. $(ETCD_LIBS)  -o $@
+loaddata: $(SHLIB) ../../Skb.c ld_etcd_skb.c 	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -L. $(ETCD_LIBS)  -o $@
 watcher: $(WATCH_TARGET) $(SHLIB) 
 	$(CC) -g $(CFLAGS) $(WATCH_TARGET) $(GTK_CFLAGS) $(SKB_FLAGS) $(ETCD_FLAGS) $(GST_CFLAGS) $(GTK_LIBS) $(GST_LIBS) -L. -letcd -o $@
 numaapp: ../../Skb.c numa_app.c	

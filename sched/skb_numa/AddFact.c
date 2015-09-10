@@ -75,7 +75,7 @@ void form_timeout_query (char *algo, char *fn_name, char *timeout){
 
 void add_fats_into_etcd () {
 
-  create_session();
+  //create_session();
   
 }
 

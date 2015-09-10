@@ -293,6 +293,8 @@ etcd_get (etcd_session session_as_void, char *key)
         etcd_result     res;
         char            *value  = NULL;
 
+	printf("the key s ===>%s\n",key);
+	fflush(stdout);
         for (srv = session->servers; srv->host; ++srv) {
                 res = etcd_get_one(session,key,srv, (const char *)"keys/",NULL,
                                    parse_get_response,&value);

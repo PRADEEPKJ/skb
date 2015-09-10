@@ -18,11 +18,19 @@ test_timeout(X) :-
 get_free_numa_node(Cpu,Memory,Output) :-
         findall(X, (nodeinfo(X,_,_,A,_,C,_), A>Memory,C>Cpu),Output).
 
+get_all_sysinfo(Type,Cpu,Memory,Output) :-
+        findall(Y, (sysinfo(T,C,M,Y),T==Type,C>Cpu,M>Memory),Output).
+
+
 get_meminfo_list(Output) :-
          findall((X,Y) ,meminfo(X,Y),Output).
 
 delete_numa_node_info(Node, _, _) :-
         retract(nodeinfo(Node,_,_,_,_,_)).
+
+delete_sysinfo(Node) :-
+        retract(sysinfo(Node,_,_,_)).
+
 
 get_cpuinfo_list(Output) :-
          findall((X,Y) ,cpuinfo(X,Y),Output).

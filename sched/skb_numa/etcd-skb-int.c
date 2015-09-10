@@ -38,7 +38,7 @@ do_get (char *key)
 {
         char            *value;       
 
-        printf("getting %s\n",key);
+        printf("getting------------> %s\n",key);
 
         value = etcd_get(sess,key);
         if (!value) {
