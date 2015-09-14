@@ -25,8 +25,8 @@ add_query_fact_client: ../../Skb.c AddFact.c
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
 test_ipc_client_interface: ../../Skb.c IPC_Interface_Client_Lib.c
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@
-skbscheduler: ../../Skb.c skb_scheduler.c	
-	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
+skbscheduler: ../../Skb.c skb_scheduler.c $(SHLIB)	
+	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -L. $(ETCD_LIBS) -o $@
 loaddata: $(SHLIB) ../../Skb.c ld_etcd_skb.c 	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(ETCD_FLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -L. $(ETCD_LIBS)  -o $@
 addsysinfo: ../../Skb.c getsysinfo.c $(SHLIB)	
@@ -38,4 +38,4 @@ numaapp: ../../Skb.c numa_app.c
 numaapp30: ../../Skb.c numa_app_30.c	
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(SKB_FLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) $(NUMA_LIBS) -o $@
 clean:
-	rm -rf *.o libetcd.so
+	rm -rf *.o libetcd.so add_query_fact_client test_ipc_client_interface skbscheduler loaddata addsysinfo watcher numaapp numaapp30 
