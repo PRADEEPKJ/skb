@@ -25,8 +25,8 @@ get_all_sysinfo(Type,Cpu,Memory,Output) :-
 get_meminfo_list(Output) :-
          findall((X,Y) ,meminfo(X,Y),Output).
 
-delete_numa_node_info(Node, _, _) :-
-        retract(nodeinfo(Node,_,_,_,_,_)).
+delete_numa_node_info(Node) :-
+        retract(nodeinfo(Node,_,_,_,_,_,_)).
 
 delete_sysinfo(Node) :-
         retract(sysinfo(Node,_,_,_)).

@@ -94,7 +94,17 @@ form_query (char *algo, char *fn_name, char *node)
 
 }
 
+void 
+form_query_for_node (char *algo, char *fn_name, int node)
+{
+
+  sprintf (query, "[%s], %s(%d)", algo, fn_name, node);
+  printf ("query is =========>%s\n", query);
+
+}
+
 int chflag  = 0;
+int level ;
 
 void *watch_etcd_change (void *dir){
    
@@ -129,29 +139,42 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 
 	if ( chflag ) {
 		
-		for (ix = 0; ix < 3; ix++){
+		if (level)
+		{
+			for (ix = 0; ix < 3; ix++){
+	
+			  form_query("test_algo","delete_sysinfo", nodes[ix]);
+			  skb_call_query (proxy, query, NULL, NULL, NULL);
 
-		  form_query("test_algo","delete_sysinfo", nodes[ix]);
-		  skb_call_query (proxy, query, NULL, NULL, NULL);
+	 		}
 
-	 	 }
-
-		char *fact = (char*)do_get(wdir->dir);
-		char *p;
-	 	p = strtok (fact, "\n");
-		char *data = (char*)do_get(p);
-		printf("data is ============>%s\n",data);
-	        skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
-        	while( p != NULL ) 
-   		{
-   			p = strtok(NULL, "\n");
-			if(p != NULL)
+			char *fact = (char*)do_get(wdir->dir);
+			char *p;
+	 		p = strtok (fact, "\n");
+			char *data = (char*)do_get(p);
+			printf("data is ============>%s\n",data);
+	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+			while( p != NULL ) 
 			{
-				data = (char*)do_get(p);
-	        		skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+				p = strtok(NULL, "\n");
+				if(p != NULL)
+				{
+					data = (char*)do_get(p);
+					skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+				}
+				printf("fact is ============>%s\n",data);
 			}
-			printf("fact is ============>%s\n",data);
-   		}
+		}
+		else
+		{
+			form_query_for_node("test_algo","delete_numa_node_info",0);
+			skb_call_query (proxy, query, NULL, NULL, NULL);
+			char *data = (char*)do_get(wdir->dir);
+			printf("data is ============>%s\n",data);
+	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+
+	   	}
+
  		chflag = 0;
 
 
@@ -183,10 +206,12 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 int
 main (int argc, char* argv[])
 {
+	
 
         wdir = malloc (sizeof(watch_dir));
         strcpy(wdir->node_ip,argv[1]);
         strcpy(wdir->dir,argv[2]);
+	level = atoi (argv[3]);
         pthread_t thread_id; 
         pthread_create(&thread_id, NULL,
                                   &watch_etcd_change, (void*)wdir);
