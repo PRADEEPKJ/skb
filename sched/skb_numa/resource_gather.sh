@@ -16,7 +16,7 @@ RESULT=`ps -a | sed -n /${SERVICE}/p`
 COUNTER=0
 while [  1 ]; do
      #echo The counter is $COUNTER
-	./addsysinfo "192.168.0.198:7001" $1 > addinfo.txt 2>&1
+	./addsysinfo $1 $2 > addinfo.txt 2>&1
         sleep 2
     done
 
