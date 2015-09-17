@@ -38,7 +38,7 @@ do_get (char *key)
 {
         char            *value;       
 
-        printf("getting------------> %s\n",key);
+        //printf("getting------------> %s\n",key);
 
         value = etcd_get(sess,key);
         if (!value) {
@@ -46,7 +46,7 @@ do_get (char *key)
                 return NULL;
         }
 
-        printf("got value: %s\n",value);
+        //printf("got value: %s\n",value);
         return value;
 }
 
@@ -60,7 +60,7 @@ do_watch ( char *pfx, char *index_str)
         int             *indexp;
         etcd_result     res;
 
-        printf("getting %s\n",pfx);
+        //printf("getting %s\n",pfx);
 
         if (index_str) {
                 index_i = (int)strtol(index_str,NULL,10);
@@ -76,21 +76,21 @@ do_watch ( char *pfx, char *index_str)
                         fprintf(stderr,"etcd_watch failed\n");
                         return -1;
                 }
-                printf("index is %d\n",index_i++);
+                //printf("index is %d\n",index_i++);
                 if (key) {
                         if (value) {
-                                printf("key %s was set to %s\n",key,value);
+                                //printf("key %s was set to %s\n",key,value);
                                 free(value);
   				return 1;
                         }
                         else {
-                                printf("key %s was deleted\n",key);
+                                //printf("key %s was deleted\n",key);
  				return 0;
                         }
                         free(key);
                 }
                 else {
-                        printf("I don't know what happened\n");
+                        //printf("I don't know what happened\n");
 			return 1;
                 }
                 indexp = &index_i;
@@ -105,9 +105,9 @@ do_set ( char *key, char *value, char *precond, char *ttl, char* dir)
 {
         unsigned long           ttl_num = 0;
 
-        printf("setting %s to %s\n",key,value);
+        //printf("setting %s to %s\n",key,value);
         if (precond) {
-                printf("  precond = %s\n",precond);
+                //printf("  precond = %s\n",precond);
         }
         if (ttl) {
                 /*
@@ -117,7 +117,7 @@ do_set ( char *key, char *value, char *precond, char *ttl, char* dir)
                  * usage we're more likely to have a number in hand.
                  */
                 ttl_num = strtoul(ttl,NULL,10);
-                printf("  ttl = %lu\n",ttl_num);
+                //printf("  ttl = %lu\n",ttl_num);
         }
         else {
                 ttl_num = 0;
@@ -163,7 +163,7 @@ do_lock (etcd_session sess, char *key, char *ttl, char *index_in)
         }
 
         if (index_out) {
-                printf("got back index number %s\n",index_out);
+                //printf("got back index number %s\n",index_out);
                 free(index_out);
         }
 
@@ -188,7 +188,7 @@ do_unlock (etcd_session sess, char *key, char *index_in)
 int
 do_delete (etcd_session sess, char *key)
 {
-        printf("deleting %s\n",key);
+        //printf("deleting %s\n",key);
 
         if (etcd_delete(sess,key) != ETCD_OK) {
                 fprintf(stderr,"etcd_delete failed\n");

@@ -25,7 +25,7 @@ read_and_update_master (char *write_server, char *direct)
 
   char *fact = (char *) do_get (direct);	//read data
   //char *node = (char*)getenv("WATCHSERVERS");
-  printf ("argv[1]===>%s, argv[2]==>%s\n", write_server, direct);
+  //printf ("argv[1]===>%s, argv[2]==>%s\n", write_server, direct);
   close_etcd_session ();	//close read session
   create_etcd_session (write_server);
   do_set (direct, fact, NULL, NULL, NULL);	//update the data
@@ -38,8 +38,8 @@ watch_etcd_change (char *read_server, char *write_server, char *direct)
 {
 
   int chflag;
-  printf ("argv[1]===>%s, argv[2]==>%s\n, argv[3]==>%s", read_server,
-	  write_server, direct);
+  //printf ("argv[1]===>%s, argv[2]==>%s\n, argv[3]==>%s", read_server,
+	  //write_server, direct);
 
   while (1)
     {
@@ -69,7 +69,7 @@ main (int argc, char *argv[])
     }
 
 
-  printf ("argv[1]===>%s\n", argv[1]);
+  //printf ("argv[1]===>%s\n", argv[1]);
   //watch server (argv[1]), and dirctory/key (argv[2]), update the server (argv[3])
   watch_etcd_change (argv[1], argv[2], argv[3]);
   return 0;

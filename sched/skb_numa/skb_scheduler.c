@@ -28,7 +28,7 @@ char *
 parse_node_results (gchar * res)
 {
 
-  printf ("the result is --->%s\n", res);
+  //printf ("the result is --->%s\n", res);
   while (*res != '\0')
     {
       if (*res == '[')
@@ -77,7 +77,7 @@ void write_to_nxt_level_etcd( char *node)
   
   //printf("the node is ======> %s\n",node);
   char* nxt_lvl_node = parse_results(node); 
-  printf("the node is ======> %s\n",nxt_lvl_node);
+  //printf("the node is ======> %s\n",nxt_lvl_node);
 
   create_etcd_session (nxt_lvl_node);
   do_set (NULL, NULL, NULL, NULL, "taskqueue"); 
@@ -116,8 +116,8 @@ callback_from_skb_query (GObject * source_object,
   gpointer result;
   struct thread_info *tinfo;
   retval = skb_call_query_finish (proxy, &qres, res, NULL);
-  printf("returned from call back\n");
-  fflush(stdout);
+  //printf("returned from call back\n");
+  //fflush(stdout);
   if(!level)
   {
   	sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, parse_results(strtok(qres,",\0")));
@@ -125,15 +125,15 @@ callback_from_skb_query (GObject * source_object,
   }
   else //@node level query for devices and schedule
   {
-	printf("the cmd is ==>%s\n", qres);
+	//printf("the cmd is ==>%s\n", qres);
 	int node_id = parse_node_results(qres);
 	if(numa_sys)
  		sprintf(command,"numactl --cpunodebind %d --membind %d %s",node_id, node_id, binary);
 	else
  		sprintf(command,"%s", binary);
 
-	printf("the cmd is ==>%s\n", command);
-	fflush(stdout);
+	//printf("the cmd is ==>%s\n", command);
+	//..fflush(stdout);
         system( command );  
   }
 
@@ -160,7 +160,7 @@ form_low_level_query (int cpu, int memory)
 
   sprintf (query, "[test_algo], get_free_numa_node(%d,%d,L),write(L)",memory, cpu);
   //sprintf (query, "[test_algo], get_free_numa_node(%d,%d,L),write(L)",cpu,memory);
-  printf ("query is =========>%s\n", query);
+  //printf ("query is =========>%s\n", query);
 
 }
 
@@ -201,7 +201,7 @@ void parse_inputs(int numargs, char**argv)
   //printf("num args===>%d\n", numargs);
   for(i = 0 ; i < numargs ; i++)
   {
-    printf("the argvis ==>%s\n",argv[i]);
+    //printf("the argvis ==>%s\n",argv[i]);
 #if 1
     int pos = 0;
     char *rc = NULL;
@@ -295,9 +295,9 @@ main (int argc, char *argv[])
 	 while (1) {
 		char *cmd = watch_etcd_change(watch_server,"/taskqueue/task");
   		close_etcd_session ();
-		printf("the cmd is ==>%s\n",cmd);
+		//printf("the cmd is ==>%s\n",cmd);
         	parse_first_res(cmd);
-		printf("IP==>%s,watch_server=>%s\n",IP,watch_server);
+		//printf("IP==>%s,watch_server=>%s\n",IP,watch_server);
 		if(!strcmp(IP,watch_server))
 		{
 			printf(" Application asked for %u MB of memory and %u percentage of CPU\n", memory,cpu);
@@ -313,7 +313,7 @@ main (int argc, char *argv[])
  	skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
 
 
- parse_inputs(argc, argv);
+// parse_inputs(argc, argv);
  g_main_loop_run (loop);
  
  return 0;

@@ -245,7 +245,7 @@ etcd_get_one (_etcd_session *session, const char *key, etcd_server *srv, const c
                      srv->host,srv->port,prefix,key) < 0) {
                 goto *err_label;
         }
-        printf("the path is ==>%s\n",url);
+        //printf("the path is ==>%s\n",url);
         err_label = &&free_url;
 
         curl = curl_easy_init();
@@ -268,7 +268,7 @@ etcd_get_one (_etcd_session *session, const char *key, etcd_server *srv, const c
 #endif
 
         curl_res = curl_easy_perform(curl);
-        printf("the path is ==>%s\n",curl);
+        //printf("the path is ==>%s\n",curl);
         if (curl_res != CURLE_OK) {
                 print_curl_error("perform",curl_res);
                 goto *err_label;
@@ -293,7 +293,7 @@ etcd_get (etcd_session session_as_void, char *key)
         etcd_result     res;
         char            *value  = NULL;
 
-	printf("the key s ===>%s\n",key);
+	//printf("the key s ===>%s\n",key);
 	fflush(stdout);
         for (srv = session->servers; srv->host; ++srv) {
                 res = etcd_get_one(session,key,srv, (const char *)"keys/",NULL,
@@ -362,7 +362,7 @@ etcd_watch (etcd_session session_as_void, char *pfx,
 
         memset(&watch,0,sizeof(watch));
         watch.index_in = index_in;
-        printf("the path is ==>%s\n",path);
+        //printf("the path is ==>%s\n",path);
 
         for (srv = session->servers; srv->host; ++srv) {
                 res = etcd_get_one(session,path,srv,"keys/",NULL,
@@ -476,7 +476,7 @@ etcd_set_one (_etcd_session *session, const char *key, const char *value,
                 goto *err_label;
         }
         err_label = &&free_url;
-	printf("the path s ==>%s\n",url);
+//	printf("the path s ==>%s\n",url);
 
         if (is_lock) {
                 if (precond) {

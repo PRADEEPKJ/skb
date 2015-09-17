@@ -20,6 +20,7 @@ SHLIB   = libetcd.so
 WATCH_TARGET=../../Skb.c etcd-watch.c
 $(SHLIB): $(S_OBJS)
 	$(CC) $(ECD_FLAGS) -shared -nostartfiles $(S_OBJS) -lcurl -lyajl -o $@
+all: skbscheduler loaddata addsysinfo watcher
 
 add_query_fact_client: ../../Skb.c AddFact.c
 	$(CC) -g $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(SKB_FLAGS) $(GST_CFLAGS) $(GST_LIBS) -o $@

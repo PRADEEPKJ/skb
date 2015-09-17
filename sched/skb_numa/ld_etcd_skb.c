@@ -90,7 +90,7 @@ form_query (char *algo, char *fn_name, char *node)
 {
 
   sprintf (query, "[%s], %s(%s)", algo, fn_name, node);
-  printf ("query is =========>%s\n", query);
+  //printf ("query is =========>%s\n", query);
 
 }
 
@@ -99,7 +99,7 @@ form_query_for_node (char *algo, char *fn_name, int node)
 {
 
   sprintf (query, "[%s], %s(%d)", algo, fn_name, node);
-  printf ("query is =========>%s\n", query);
+  //printf ("query is =========>%s\n", query);
 
 }
 
@@ -109,7 +109,7 @@ int level ;
 void *watch_etcd_change (void *dir){
    
 	watch_dir *watch = (watch_dir*) dir;
-	printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
+	//printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
         create_etcd_session(watch->node_ip);
          while (1 && !chflag) {
 		 chflag  =  do_watch (watch->node_ip,watch->dir);
@@ -134,7 +134,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 					      NULL,	                /* GCancellable* */
 					      &error);
 
-		printf("the fact is ============>%s\n",wdir->dir);
+		//printf("the fact is ============>%s\n",wdir->dir);
   while (1) {
 
 	if ( chflag ) {
@@ -152,7 +152,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 			char *p;
 	 		p = strtok (fact, "\n");
 			char *data = (char*)do_get(p);
-			printf("data is ============>%s\n",data);
+			//printf("data is ============>%s\n",data);
 	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
 			while( p != NULL ) 
 			{
@@ -162,7 +162,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 					data = (char*)do_get(p);
 					skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
 				}
-				printf("fact is ============>%s\n",data);
+				//printf("fact is ============>%s\n",data);
 			}
 		}
 		else
@@ -170,7 +170,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 			form_query_for_node("test_algo","delete_numa_node_info",0);
 			skb_call_query (proxy, query, NULL, NULL, NULL);
 			char *data = (char*)do_get(wdir->dir);
-			printf("data is ============>%s\n",data);
+			//printf("data is ============>%s\n",data);
 	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
 
 	   	}
