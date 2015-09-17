@@ -120,7 +120,7 @@ callback_from_skb_query (GObject * source_object,
   fflush(stdout);
   if(!level)
   {
-  	sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, strtok(qres,",\0"));
+  	sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, parse_results(strtok(qres,",\0")));
   	write_to_nxt_level_etcd(strtok(qres,",\0"));
   }
   else //@node level query for devices and schedule
@@ -185,7 +185,7 @@ void parse_first_res (char *args)
     }
   else if(!strcmp("IP", rc )){
     	rc = strtok(NULL, " ");
-	sprintf (IP,"%s", rc);
+	sprintf (IP,"%s",(parse_results(rc)));
     }
 
     rc = strtok (NULL, " =");
@@ -297,6 +297,7 @@ main (int argc, char *argv[])
   		close_etcd_session ();
 		printf("the cmd is ==>%s\n",cmd);
         	parse_first_res(cmd);
+		printf("IP==>%s,watch_server=>%s\n",IP,watch_server);
 		if(!strcmp(IP,watch_server))
 		{
 			printf(" Application asked for %u MB of memory and %u percentage of CPU\n", memory,cpu);
