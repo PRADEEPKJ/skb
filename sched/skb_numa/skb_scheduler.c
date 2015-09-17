@@ -13,6 +13,7 @@ char query[200];
 GMainLoop *loop;
 Skb *proxy;
 char binary[50];
+char IP[50];
 char **cmd;
 char command[1024];
 
@@ -76,7 +77,7 @@ void write_to_nxt_level_etcd( char *node)
   
   //printf("the node is ======> %s\n",node);
   char* nxt_lvl_node = parse_results(node); 
-  //printf("the node is ======> %s\n",nxt_lvl_node);
+  printf("the node is ======> %s\n",nxt_lvl_node);
 
   create_etcd_session (nxt_lvl_node);
   do_set (NULL, NULL, NULL, NULL, "taskqueue"); 
@@ -119,8 +120,8 @@ callback_from_skb_query (GObject * source_object,
   fflush(stdout);
   if(!level)
   {
-  	sprintf(command,"binary=%s memory=%d cpu=%d", binary, memory, cpu);
-  	write_to_nxt_level_etcd(qres);
+  	sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, strtok(qres,",\0"));
+  	write_to_nxt_level_etcd(strtok(qres,",\0"));
   }
   else //@node level query for devices and schedule
   {
@@ -182,6 +183,11 @@ void parse_first_res (char *args)
     	rc = strtok(NULL, " ");
 	sprintf (binary,"%s", rc);
     }
+  else if(!strcmp("IP", rc )){
+    	rc = strtok(NULL, " ");
+	sprintf (IP,"%s", rc);
+    }
+
     rc = strtok (NULL, " =");
   }
 
@@ -291,11 +297,16 @@ main (int argc, char *argv[])
   		close_etcd_session ();
 		printf("the cmd is ==>%s\n",cmd);
         	parse_first_res(cmd);
-	 	printf(" Application asked for %u MB of memory and %u percentage of CPU\n", memory,cpu);
-	 	form_low_level_query (cpu, memory);
-	 	skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
- 		//parse_inputs(argc, argv);
- 		g_main_loop_run (loop);
+		if(!strcmp(IP,watch_server))
+		{
+			printf(" Application asked for %u MB of memory and %u percentage of CPU\n", memory,cpu);
+			form_low_level_query (cpu, memory);
+			skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
+			//parse_inputs(argc, argv);
+			g_main_loop_run (loop);
+		}
+		else
+			continue;
 	}
 	form_query (type, cpu, memory);
  	skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
