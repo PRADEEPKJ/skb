@@ -774,7 +774,7 @@ add_sysinfo_to_etcd ()
   //store the data which is shared between the higher level cluster 
   sprintf (fact, "global/%s", sysName);
 
-  sprintf (sysfact, "sysinfo(%s, %d, %d, '%s').", m_type, cpu_free, mem_free,
+  sprintf (sysfact, "sysinfo(%s, %d, %d, '%s').", m_type,  mem_free,cpu_free,
 	   sysIP);
   do_set (fact, sysfact, NULL, NULL, NULL);
 

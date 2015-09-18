@@ -110,13 +110,13 @@ int level ;
 int watch_etcd_change (void *dir){
    
 	watch_dir *watch = (watch_dir*) dir;
-	printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
+	//printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
 	int cnt = 0;
         while (1 && !chflag) {
 		 sleep (3);
 		 if((cnt  +=  do_watch (watch->node_ip,watch->dir)) == 3){
 			chflag = true;
-			printf("cnt is ============>%d\n",cnt);
+			//printf("cnt is ============>%d\n",cnt);
 		//	close_etcd_session();
 			return 1;
 			//cnt = 0; 
@@ -161,7 +161,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 			char *p;
 	 		p = strtok (fact, "\n");
 			char *data = (char*)do_get(p);
-			printf("data is ============>%s\n",data);
+			//printf("data is ============>%s\n",data);
 	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
 			while( p != NULL ) 
 			{

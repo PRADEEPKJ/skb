@@ -12,7 +12,7 @@ char L[200];
 char query[200];
 GMainLoop *loop;
 Skb *proxy;
-char binary[50];
+char binary[100];
 char IP[50];
 char **cmd;
 char command[1024];
@@ -121,7 +121,7 @@ callback_from_skb_query (GObject * source_object,
   if(strcmp(qres,"[]"))
 	  if(!level )
 	  {
-		sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, parse_results(strtok(qres,",\0")));
+		sprintf(command,"binary=\"%s\" memory=%d cpu=%d IP=%s", binary, memory, cpu, parse_results(strtok(qres,",\0")));
 		write_to_nxt_level_etcd(strtok(qres,",\0"));
 	  }
 	  else //@node level query for devices and schedule
@@ -135,7 +135,7 @@ callback_from_skb_query (GObject * source_object,
 		else
 			sprintf(command,"%s", binary);
 
-		//printf("the cmd is ==>%s\n", command);
+		printf("the cmd is ==>%s\n", command);
 		//..fflush(stdout);
 		system( command );  
 	  }
@@ -154,7 +154,7 @@ form_query (char *ty, int cpu, int memory)
 
   //sprintf (query, "[test_algo], get_free_numa_node(%d,%d,L),write(L)",memory, cpu);
   sprintf (query, "[test_algo], get_all_sysinfo(%s,%d,%d,L),write(L)",ty,memory,cpu);
-  printf ("query is =========>%s\n", query);
+  //printf ("query is =========>%s\n", query);
 
 }
 
@@ -177,18 +177,22 @@ void parse_first_res (char *args)
     if(!strcmp("memory", rc )){
     	rc = strtok(NULL, " ");
 	memory = atoi(rc);
+  //printf ("query is =========>%d\n", memory);
     }
    else if(!strcmp("cpu", rc )){
     	rc = strtok(NULL, " ");
 	cpu  = atoi(rc);
+  	//printf ("cpu is =========>%d\n", cpu);
     }
    else if(!strcmp("binary", rc )){
-    	rc = strtok(NULL, " ");
+    	rc = strtok(NULL, "\"");
 	sprintf (binary,"%s", rc);
+	//printf ("binary is =========>%s\n", binary);
     }
   else if(!strcmp("IP", rc )){
     	rc = strtok(NULL, " ");
 	sprintf (IP,"%s",(parse_results(rc)));
+ 	 //printf ("ip is =========>%s\n", IP);
     }
 
     rc = strtok (NULL, " =");
@@ -209,10 +213,7 @@ void parse_inputs(int numargs, char**argv)
     int pos = 0;
     char *rc = NULL;
     char *delims;
-    if (level)
-    	rc = strtok(argv[i], " ");
-    else
-    	rc = strtok(argv[i], "=");
+    rc = strtok(argv[i], "=");
 
     if(!strcmp("memory", rc )){
     	rc = strtok(NULL, " \0");
@@ -225,7 +226,7 @@ void parse_inputs(int numargs, char**argv)
 //	printf("cpu is ==>%d\n",cpu);
     }
    else if(!strcmp("binary", rc )){
-    	rc = strtok(NULL, " \0");
+    	rc = strtok(NULL, "\0");
 	sprintf (binary,"%s", rc);
 //	printf("binary is ==>%s\n",cpu);
     }
