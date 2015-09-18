@@ -116,32 +116,35 @@ callback_from_skb_query (GObject * source_object,
   gpointer result;
   struct thread_info *tinfo;
   retval = skb_call_query_finish (proxy, &qres, res, NULL);
-  //printf("returned from call back\n");
+  printf("ret value is ==>%s\n",qres);
   //fflush(stdout);
-  if(!level)
-  {
-  	sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, parse_results(strtok(qres,",\0")));
-  	write_to_nxt_level_etcd(strtok(qres,",\0"));
-  }
-  else //@node level query for devices and schedule
-  {
-	//printf("the cmd is ==>%s\n", qres);
-	int node_id = parse_node_results(qres);
-	if(numa_sys)
- 		sprintf(command,"numactl --cpunodebind %d --membind %d %s",node_id, node_id, binary);
-	else
- 		sprintf(command,"%s", binary);
+  if(strcmp(qres,"[]"))
+	  if(!level )
+	  {
+		sprintf(command,"binary=%s memory=%d cpu=%d IP=%s", binary, memory, cpu, parse_results(strtok(qres,",\0")));
+		write_to_nxt_level_etcd(strtok(qres,",\0"));
+	  }
+	  else //@node level query for devices and schedule
+	  {
+		//printf("the cmd is ==>%s\n", qres);
+		int node_id = parse_node_results(qres);
+		if(node_id >= 0 )
 
-	//printf("the cmd is ==>%s\n", command);
-	//..fflush(stdout);
-        system( command );  
-  }
+		if(numa_sys)
+			sprintf(command,"numactl --cpunodebind %d --membind %d %s",node_id, node_id, binary);
+		else
+			sprintf(command,"%s", binary);
+
+		//printf("the cmd is ==>%s\n", command);
+		//..fflush(stdout);
+		system( command );  
+	  }
 
   //printf("the command is == %s\n",*cmd);
   //printf("the command is == %s\n",nxt_lvl_node);
 
   //g_main_loop_unref (loop);
-  g_main_loop_quit (loop);
+  	g_main_loop_quit (loop);
 
 }
 
@@ -150,8 +153,8 @@ form_query (char *ty, int cpu, int memory)
 {
 
   //sprintf (query, "[test_algo], get_free_numa_node(%d,%d,L),write(L)",memory, cpu);
-  sprintf (query, "[test_algo], get_all_sysinfo(%s,%d,%d,L),write(L)",ty,cpu,memory);
-  //printf ("query is =========>%s\n", query);
+  sprintf (query, "[test_algo], get_all_sysinfo(%s,%d,%d,L),write(L)",ty,memory,cpu);
+  printf ("query is =========>%s\n", query);
 
 }
 

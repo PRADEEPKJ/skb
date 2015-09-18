@@ -33,6 +33,7 @@
 #include "Skb.h"
 #include <pthread.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 
@@ -103,17 +104,23 @@ form_query_for_node (char *algo, char *fn_name, int node)
 
 }
 
-int chflag  = 0;
+bool chflag  = false;
 int level ;
 
-void *watch_etcd_change (void *dir){
+int watch_etcd_change (void *dir){
    
 	watch_dir *watch = (watch_dir*) dir;
-	//printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
-        create_etcd_session(watch->node_ip);
-         while (1 && !chflag) {
-		 chflag  =  do_watch (watch->node_ip,watch->dir);
-		 sleep (1);
+	printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
+	int cnt = 0;
+        while (1 && !chflag) {
+		 sleep (3);
+		 if((cnt  +=  do_watch (watch->node_ip,watch->dir)) == 3){
+			chflag = true;
+			printf("cnt is ============>%d\n",cnt);
+		//	close_etcd_session();
+			return 1;
+			//cnt = 0; 
+		}
 	 }
 	close_etcd_session();
 }
@@ -135,9 +142,11 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 					      &error);
 
 		//printf("the fact is ============>%s\n",wdir->dir);
+        create_etcd_session(wdir->node_ip);
   while (1) {
 
-	if ( chflag ) {
+	if(watch_etcd_change((void*)wdir)){
+//	if ( chflag ) {
 		
 		if (level)
 		{
@@ -152,7 +161,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 			char *p;
 	 		p = strtok (fact, "\n");
 			char *data = (char*)do_get(p);
-			//printf("data is ============>%s\n",data);
+			printf("data is ============>%s\n",data);
 	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
 			while( p != NULL ) 
 			{
@@ -175,7 +184,7 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 
 	   	}
 
- 		chflag = 0;
+ 		chflag = false;
 
 
 	 		//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
@@ -213,8 +222,9 @@ main (int argc, char* argv[])
         strcpy(wdir->dir,argv[2]);
 	level = atoi (argv[3]);
         pthread_t thread_id; 
-        pthread_create(&thread_id, NULL,
-                                  &watch_etcd_change, (void*)wdir);
+//        pthread_create(&thread_id, NULL,
+  //                                &watch_etcd_change, (void*)wdir);
+	
         add_num_nodes_info_to_skb(wdir);
   	g_main_loop_run (loop);
 	
