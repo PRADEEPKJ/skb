@@ -50,7 +50,7 @@ int num_nodes = 0;
 char *sysIP;
 char *sysName;
 
-
+Skb *proxy;
 
 int timex = 0;
 
@@ -130,22 +130,10 @@ char nodes[][30]={"x86_64","x86_64","aarch64"};
 void add_num_nodes_info_to_skb(watch_dir *wdir){
 
   int ix = 0;
-  Skb *proxy;
-  GError *error;
-  error = NULL;
   create_etcd_session(wdir->node_ip);
-  proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
-					      G_DBUS_PROXY_FLAGS_NONE,
-					      "org.freedesktop.Skb",	/* bus name */
-					      "/org/freedesktop/Skb",	/* object */
-					      NULL,	                /* GCancellable* */
-					      &error);
+  //while (1) {
 
-		//printf("the fact is ============>%s\n",wdir->dir);
-        create_etcd_session(wdir->node_ip);
-  while (1) {
-
-	if(watch_etcd_change((void*)wdir)){
+//	if(watch_etcd_change((void*)wdir)){
 //	if ( chflag ) {
 		
 		if (level)
@@ -158,20 +146,22 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 	 		}
 
 			char *fact = (char*)do_get(wdir->dir);
+			printf("dirs changed is ============>%s\n",fact);
 			char *p;
 	 		p = strtok (fact, "\n");
 			char *data = (char*)do_get(p);
-			//printf("data is ============>%s\n",data);
-	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+	        	skb_call_add_fact (proxy, data, NULL, NULL, NULL);
+			printf("data is ============>%s\n",data);
 			while( p != NULL ) 
 			{
 				p = strtok(NULL, "\n");
 				if(p != NULL)
 				{
 					data = (char*)do_get(p);
-					skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+	        			skb_call_add_fact (proxy, data, NULL, NULL, NULL);
+					printf("data is ============>%s\n",data);
+				
 				}
-				//printf("fact is ============>%s\n",data);
 			}
 		}
 		else
@@ -179,22 +169,22 @@ void add_num_nodes_info_to_skb(watch_dir *wdir){
 			form_query_for_node("test_algo","delete_numa_node_info",0);
 			skb_call_query (proxy, query, NULL, NULL, NULL);
 			char *data = (char*)do_get(wdir->dir);
-			//printf("data is ============>%s\n",data);
-	        	skb_call_add_fact (proxy, data, NULL, callback_from_skb_query, NULL);
+	        	skb_call_add_fact (proxy, data, NULL, NULL, NULL);
 
 	   	}
+			printf("quitting-----------------\n");
+	close_etcd_session();
+        //g_main_loop_quit (loop);
+ 
 
- 		chflag = false;
+ 		//chflag = false;
 
 
 	 		//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
 		//sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
-	    }
-    }
-	close_etcd_session();
-        g_main_loop_quit (loop);
- 
-#if 0
+	    //}
+    //}
+	#if 0
   for (ix = 0; ix < num_nodes; ix++)
     {
 
@@ -216,17 +206,27 @@ int
 main (int argc, char* argv[])
 {
 	
-
+	GError *error;
+	error = NULL;
         wdir = malloc (sizeof(watch_dir));
         strcpy(wdir->node_ip,argv[1]);
         strcpy(wdir->dir,argv[2]);
 	level = atoi (argv[3]);
         pthread_t thread_id; 
+	proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
+					      G_DBUS_PROXY_FLAGS_NONE,
+					      "org.freedesktop.Skb",	/* bus name */
+					      "/org/freedesktop/Skb",	/* object */
+					      NULL,	                /* GCancellable* */
+					      &error);
+
+
 //        pthread_create(&thread_id, NULL,
   //                                &watch_etcd_change, (void*)wdir);
 	
+  //	loop = g_main_loop_new (NULL, FALSE);
         add_num_nodes_info_to_skb(wdir);
-  	g_main_loop_run (loop);
+  //	g_main_loop_run (loop);
 	
 
    //show_nodes_info ();
