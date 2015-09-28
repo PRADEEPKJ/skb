@@ -62,26 +62,28 @@ int call_count = 0;
 pthread_attr_t attr;
 
 void
-callback_from_skb_query (GObject *source_object,
-                        GAsyncResult *res,
-                        gpointer user_data){
+callback_from_skb_query (GObject * source_object,
+			 GAsyncResult * res, gpointer user_data)
+{
 
-  fprintf(stdout,"the function called back with the results\n");
-  fflush(stdout);
-  if(call_count-- <= 1) {
-	  g_main_loop_unref (loop);
-	  g_main_loop_quit (loop);
+  fprintf (stdout, "the function called back with the results\n");
+  fflush (stdout);
+  if (call_count-- <= 1)
+    {
+      g_main_loop_unref (loop);
+      g_main_loop_quit (loop);
 
- }
+    }
 
 }
 
 char query[100];
 
-typedef struct watch_directory {
+typedef struct watch_directory
+{
   char node_ip[50];
   char *dir[20];
-}watch_dir ;
+} watch_dir;
 
 
 watch_dir *wdir;
@@ -95,7 +97,7 @@ form_query (char *algo, char *fn_name, char *node)
 
 }
 
-void 
+void
 form_query_for_node (char *algo, char *fn_name, int node)
 {
 
@@ -104,132 +106,143 @@ form_query_for_node (char *algo, char *fn_name, int node)
 
 }
 
-bool chflag  = false;
-int level ;
+bool chflag = false;
+int level;
 
-int watch_etcd_change (void *dir){
-   
-	watch_dir *watch = (watch_dir*) dir;
-	//printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
-	int cnt = 0;
-        while (1 && !chflag) {
-		 sleep (3);
-		 if((cnt  +=  do_watch (watch->node_ip,watch->dir)) == 3){
-			chflag = true;
-			//printf("cnt is ============>%d\n",cnt);
-		//	close_etcd_session();
-			return 1;
-			//cnt = 0; 
-		}
-	 }
-	close_etcd_session();
+int
+watch_etcd_change (void *dir)
+{
+
+  watch_dir *watch = (watch_dir *) dir;
+  //printf("ip is ============>%s %s\n",watch->node_ip, watch->dir);
+  int cnt = 0;
+  while (1 && !chflag)
+    {
+      sleep (3);
+      if ((cnt += do_watch (watch->node_ip, watch->dir)) == 3)
+	{
+	  chflag = true;
+	  //printf("cnt is ============>%d\n",cnt);
+	  //      close_etcd_session();
+	  return 1;
+	  cnt = 0;
+	}
+    }
+  close_etcd_session ();
 }
 
-char nodes[][30]={"x86_64","x86_64","aarch64"};
+char nodes[][30] = { "x86_64", "x86_64", "aarch64" };
 
-void add_num_nodes_info_to_skb(watch_dir *wdir){
+void
+add_num_nodes_info_to_skb (watch_dir * wdir)
+{
 
   int ix = 0;
-  create_etcd_session(wdir->node_ip);
-  //while (1) {
+  create_etcd_session (wdir->node_ip);
+  while (1)
+    {
 
-//	if(watch_etcd_change((void*)wdir)){
-//	if ( chflag ) {
-		
-		if (level)
+      if (watch_etcd_change ((void *) wdir))
+	{
+	  if (chflag)
+	    {
+
+	      if (level)
 		{
-			for (ix = 0; ix < 3; ix++){
-	
-			  form_query("test_algo","delete_sysinfo", nodes[ix]);
-			  skb_call_query (proxy, query, NULL, NULL, NULL);
+		  for (ix = 0; ix < 3; ix++)
+		    {
 
-	 		}
+		      form_query ("test_algo", "delete_sysinfo", nodes[ix]);
+		      skb_call_query (proxy, query, NULL, NULL, NULL);
 
-			char *fact = (char*)do_get(wdir->dir);
-			printf("dirs changed is ============>%s\n",fact);
-			char *p;
-	 		p = strtok (fact, "\n");
-			char *data = (char*)do_get(p);
-	        	skb_call_add_fact (proxy, data, NULL, NULL, NULL);
-			printf("data is ============>%s\n",data);
-			while( p != NULL ) 
+		    }
+
+		  char *fact = (char *) do_get (wdir->dir);
+		  //printf ("dirs changed is ============>%s\n", fact);
+		  char *p;
+		  p = strtok (fact, "\n");
+		  char *data = (char *) do_get (p);
+		  skb_call_add_fact (proxy, data, NULL, NULL, NULL);
+		  //printf ("data is ============>%s\n", data);
+		  while (p != NULL)
+		    {
+		      p = strtok (NULL, "\n");
+		      if (p != NULL)
 			{
-				p = strtok(NULL, "\n");
-				if(p != NULL)
-				{
-					data = (char*)do_get(p);
-	        			skb_call_add_fact (proxy, data, NULL, NULL, NULL);
-					printf("data is ============>%s\n",data);
-				
-				}
+			  data = (char *) do_get (p);
+			  skb_call_add_fact (proxy, data, NULL, NULL, NULL);
+			  //printf ("data is ============>%s\n", data);
+
 			}
+		    }
 		}
-		else
+	      else
 		{
-			form_query_for_node("test_algo","delete_numa_node_info",0);
-			skb_call_query (proxy, query, NULL, NULL, NULL);
-			char *data = (char*)do_get(wdir->dir);
-	        	skb_call_add_fact (proxy, data, NULL, NULL, NULL);
+		  form_query_for_node ("test_algo", "delete_numa_node_info",
+				       0);
+		  skb_call_query (proxy, query, NULL, NULL, NULL);
+		  char *data = (char *) do_get (wdir->dir);
+		  skb_call_add_fact (proxy, data, NULL, NULL, NULL);
 
-	   	}
-			printf("quitting-----------------\n");
-	close_etcd_session();
-        //g_main_loop_quit (loop);
- 
-
- 		//chflag = false;
+		}
+	      //printf ("quitting-----------------\n");
+	      g_main_loop_quit (loop);
 
 
-	 		//sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
-		//sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
-	    //}
-    //}
-	#if 0
+	      chflag = false;
+
+
+	    }
+	  //sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)");
+	  //sprintf(fact,"nodeinfo(1,2,3,4,5,'1.2.3.4').");
+	}
+    }
+#if 0
   for (ix = 0; ix < num_nodes; ix++)
     {
 
-	sprintf(fact,"nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)",ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-               node[ix].CPUs_free);
-	skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
-	fprintf (stdout,
-               " added to skb Node %d:  num cpus %d: MBs_total %ld, MBs_free %6ld, CPUs_total %ld, CPUs_free %4ld \n ",
-               ix, NUM_IDS_IN_LIST(node[ix].cpu_list_p),  node[ix].MBs_total, node[ix].MBs_free, node[ix].CPUs_total,
-               node[ix].CPUs_free);
- 	call_count++;
+      sprintf (fact, "nodeinfo(%d, %d, %ld, %6ld, %ld, %ld)", ix,
+	       NUM_IDS_IN_LIST (node[ix].cpu_list_p), node[ix].MBs_total,
+	       node[ix].MBs_free, node[ix].CPUs_total, node[ix].CPUs_free);
+      skb_call_add_fact (proxy, fact, NULL, callback_from_skb_query, NULL);
+      fprintf (stdout,
+	       " added to skb Node %d:  num cpus %d: MBs_total %ld, MBs_free %6ld, CPUs_total %ld, CPUs_free %4ld \n ",
+	       ix, NUM_IDS_IN_LIST (node[ix].cpu_list_p), node[ix].MBs_total,
+	       node[ix].MBs_free, node[ix].CPUs_total, node[ix].CPUs_free);
+      call_count++;
     }
 #endif
+	      close_etcd_session ();
 }
 
 
 
 int
-main (int argc, char* argv[])
+main (int argc, char *argv[])
 {
-	
-	GError *error;
-	error = NULL;
-        wdir = malloc (sizeof(watch_dir));
-        strcpy(wdir->node_ip,argv[1]);
-        strcpy(wdir->dir,argv[2]);
-	level = atoi (argv[3]);
-        pthread_t thread_id; 
-	proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, 
-					      G_DBUS_PROXY_FLAGS_NONE,
-					      "org.freedesktop.Skb",	/* bus name */
-					      "/org/freedesktop/Skb",	/* object */
-					      NULL,	                /* GCancellable* */
-					      &error);
+
+  GError *error;
+  error = NULL;
+  wdir = malloc (sizeof (watch_dir));
+  strcpy (wdir->node_ip, argv[1]);
+  strcpy (wdir->dir, argv[2]);
+  level = atoi (argv[3]);
+  pthread_t thread_id;
+  proxy = skb_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, "org.freedesktop.Skb",	/* bus name */
+				      "/org/freedesktop/Skb",	/* object */
+				      NULL,	/* GCancellable* */
+				      &error);
 
 
-//        pthread_create(&thread_id, NULL,
-  //                                &watch_etcd_change, (void*)wdir);
-	
-  //	loop = g_main_loop_new (NULL, FALSE);
-        add_num_nodes_info_to_skb(wdir);
-  //	g_main_loop_run (loop);
-	
+  // pthread_create(&thread_id, NULL,
+  //                          &watch_etcd_change, (void*)wdir);
 
-   //show_nodes_info ();
+  loop = g_main_loop_new (NULL, FALSE);
+  add_num_nodes_info_to_skb (wdir);
+  g_main_loop_run (loop);
+
+
+  //show_nodes_info ();
 
 
 }

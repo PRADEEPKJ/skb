@@ -116,8 +116,28 @@ callback_from_skb_query (GObject * source_object,
   gpointer result;
   struct thread_info *tinfo;
   retval = skb_call_query_finish (proxy, &qres, res, NULL);
-  printf("ret value is ==>%s\n",qres);
+  //printf("ret value is ==>%s\n",qres);
   //fflush(stdout);
+
+  while (1)
+  {
+	if(!strcmp(qres,"[]"))
+  	{
+  		g_main_loop_quit (loop);
+  		//printf("q is ==>%s\n",query);
+		skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
+ 		g_main_loop_run (loop);
+		sleep(5);
+		continue;
+	}
+	else
+	{
+  		//g_main_loop_quit (loop);
+		break;
+	}
+	
+  }
+	
   if(strcmp(qres,"[]"))
 	  if(!level )
 	  {
@@ -135,7 +155,7 @@ callback_from_skb_query (GObject * source_object,
 		else
 			sprintf(command,"%s", binary);
 
-		printf("the cmd is ==>%s\n", command);
+		//printf("the cmd is ==>%s\n", command);
 		//..fflush(stdout);
 		system( command );  
 	  }
@@ -143,8 +163,8 @@ callback_from_skb_query (GObject * source_object,
   //printf("the command is == %s\n",*cmd);
   //printf("the command is == %s\n",nxt_lvl_node);
 
-  //g_main_loop_unref (loop);
-  	g_main_loop_quit (loop);
+  g_main_loop_unref (loop);
+  g_main_loop_quit (loop);
 
 }
 
