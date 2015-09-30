@@ -129,25 +129,30 @@ callback_from_skb_query (GObject * source_object,
   gboolean retval;
   gpointer result;
   struct thread_info *tinfo;
+  //char qres[400];
   retval = skb_call_query_finish (proxy, &qres, res, NULL);
   //printf("ret value is ==>%s\n",qres);
   //fflush(stdout);
 
-  while (1)
+  if (!strcmp (qres, "[]"))
     {
-      if (!strcmp (qres, "[]"))
+      g_main_loop_quit (loop);
+      //printf("q is ==>%s\n",query);
+      while (1)
 	{
-	  g_main_loop_quit (loop);
-	  //printf("q is ==>%s\n",query);
-	  skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
-	  g_main_loop_run (loop);
-	  sleep (10);
-	  continue;
-	}
-      else
-	{
-	  //g_main_loop_quit (loop);
-	  break;
+	  //skb_call_query (proxy, query, NULL, callback_from_skb_query, NULL);
+	  skb_call_query_sync (proxy, query, &qres, NULL, NULL);
+	  if (!strcmp (qres, "[]"))
+	    {
+	      //g_main_loop_run (loop);
+	      sleep (10);
+	      continue;
+	    }
+	  else
+	    {
+	      //g_main_loop_quit (loop);
+	      break;
+	    }
 	}
 
     }
